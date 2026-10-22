@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2F8CFF"/><stop offset="1" stop-color="#0A3C9E"/></linearGradient>
+    <linearGradient id="cl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#CFE3FF"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- cloud -->
+  <path d="M300 132a34 34 0 0 1 40-26 46 46 0 0 1 86 14 32 32 0 0 1-6 62H318a38 38 0 0 1-18-50z" transform="translate(-26 -6) scale(.95)" fill="url(#cl)"/>
+  <!-- laptop -->
+  <rect x="120" y="196" width="272" height="166" rx="16" fill="#0B1F5C" stroke="#fff" stroke-width="10"/>
+  <g fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="204,248 178,279 204,310"/>
+    <polyline points="308,248 334,279 308,310"/>
+    <line x1="272" y1="240" x2="240" y2="318"/>
+  </g>
+  <path d="M84 376h344l-26 34a16 16 0 0 1-13 6H123a16 16 0 0 1-13-6z" fill="#E4F0FF"/>
+  <rect x="226" y="380" width="60" height="9" rx="4.5" fill="#9DBEF0"/>
+  <!-- graduation cap -->
+  <g transform="translate(26 62)">
+    <polygon points="64,70 140,42 216,70 140,98" fill="#0B1F5C" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M96 88v28c0 10 20 20 44 20s44-10 44-20V88l-44 16z" fill="#0B1F5C" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M206 74v44" stroke="#FFC233" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="206" cy="124" r="9" fill="#FFC233"/>
+  </g>
+</svg>
