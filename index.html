@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Εφαρμογές Γιάννη Τσιμπινού</title>
-<meta name="description" content="Σουίτα εργαλείων για το σχολείο: Εφημερίες και Κατανομή ΓΡ. Δημιουργός: Γιάννης Τσιμπινός.">
+<meta name="description" content="Σουίτα εργαλείων για το σχολείο: Εφημερίες, Κατανομή ΓΡ και Αναπληρώσεις. Δημιουργός: Γιάννης Τσιμπινός.">
 <meta name="theme-color" content="#0B3FA8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -16,19 +16,19 @@
 <style>
   :root{
     --bg:#EEF4FF; --surface:#FFFFFF; --ink:#0B1F5C; --muted:#4A5E86; --line:#D5E2F7;
-    --blue:#0B63CE; --blue-deep:#0B3FA8; --green:#2F6B3F; --green-soft:#E3F1E7; --red:#C62828; --red-soft:#FBE5E5;
+    --blue:#0B63CE; --blue-deep:#0B3FA8; --green:#2F6B3F; --green-soft:#E3F1E7; --red:#C62828; --red-soft:#FBE5E5; --indigo:#3949AB; --indigo-soft:#E6E9FA;
     --shadow:0 1px 2px rgba(11,31,92,.06), 0 8px 24px rgba(11,31,92,.08);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#0A1230; --surface:#111C45; --ink:#EAF1FF; --muted:#9DB0DA; --line:#25356B;
-      --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717;
+      --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717; --indigo:#A9B2FF; --indigo-soft:#232A5C;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
     }
   }
   :root[data-theme="dark"]{
     --bg:#0A1230; --surface:#111C45; --ink:#EAF1FF; --muted:#9DB0DA; --line:#25356B;
-    --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717;
+    --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717; --indigo:#A9B2FF; --indigo-soft:#232A5C;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box;}
@@ -38,12 +38,12 @@
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     line-height:1.5; min-height:100vh; display:flex; flex-direction:column;
   }
-  .wrap{width:100%; max-width:880px; margin:0 auto; padding:0 16px;}
+  .wrap{width:100%; max-width:1080px; margin:0 auto; padding:0 16px;}
   header.hero{padding:44px 0 28px; text-align:center;}
   .logo{width:112px; height:112px; border-radius:50%; box-shadow:var(--shadow); background:#fff; display:block; margin:0 auto 18px;}
   h1{font-size:clamp(26px,5vw,36px); line-height:1.15; margin:0 0 10px; letter-spacing:-.01em;}
   .lead{margin:0 auto; max-width:560px; color:var(--muted); font-size:16px;}
-  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:16px; padding:8px 0 8px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:16px; padding:8px 0 8px;}
   a.card{
     display:flex; flex-direction:column; gap:12px; text-decoration:none; color:inherit;
     background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:var(--shadow);
@@ -53,6 +53,23 @@
   a.card:focus-visible{outline:3px solid var(--accent); outline-offset:3px;}
   a.card.ef{--accent:var(--green); --soft:var(--green-soft);}
   a.card.gr{--accent:var(--red); --soft:var(--red-soft);}
+  a.card.an{--accent:var(--indigo); --soft:var(--indigo-soft);}
+  .week{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px 22px; box-shadow:var(--shadow); margin:0 0 16px;}
+  .week[hidden]{display:none;}
+  .week-h{display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:space-between; margin-bottom:12px;}
+  .week h2{margin:0; font-size:18px;}
+  .week .sub{margin:2px 0 0; color:var(--muted); font-size:13.5px;}
+  .steps{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:10px;}
+  .steps li{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; background:var(--bg); font-size:13.5px; line-height:1.35;}
+  .steps li b{display:block; font-size:14px; color:var(--ink);}
+  .steps li span.t{color:var(--muted);}
+  .dot{flex:none; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:13px; font-weight:800; background:var(--line); color:var(--muted);}
+  .dot.ok{background:var(--green); color:#fff;} .dot.half{background:#F2B233; color:#2A1D00;} .dot.bad{background:var(--red); color:#fff;}
+  .dlall{font:inherit; font-weight:700; font-size:14px; color:#fff; background:var(--blue-deep); border:0; border-radius:10px; padding:10px 16px; cursor:pointer; display:inline-flex; gap:8px; align-items:center;}
+  .dlall:disabled{opacity:.5; cursor:default;}
+  .dlall:focus-visible{outline:3px solid var(--blue); outline-offset:2px;}
+  .dlmsg{font-size:13px; color:var(--muted); margin-top:10px;}
+  .dlmsg a{color:var(--blue); font-weight:600;}
   .ico{width:52px; height:52px; border-radius:14px; background:var(--soft); color:var(--accent); display:grid; place-items:center;}
   .card h2{margin:0; font-size:21px; line-height:1.2;}
   .card p{margin:0; color:var(--muted); font-size:14.5px;}
@@ -100,6 +117,17 @@
   </header>
 
   <main>
+    <section class="week" id="week" hidden aria-labelledby="weekTitle">
+      <div class="week-h">
+        <div><h2 id="weekTitle">Η εβδομάδα μου</h2><p class="sub" id="weekSub"></p></div>
+        <button type="button" class="dlall" id="dlAll" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+          <span>Λήψη όλων</span>
+        </button>
+      </div>
+      <ol class="steps" id="steps"></ol>
+      <div class="dlmsg" id="dlMsg" hidden></div>
+    </section>
     <div class="grid">
       <a class="card ef" href="efimeries/" data-app="ef">
         <div class="card-top"><div class="ico" aria-hidden="true">
@@ -119,6 +147,17 @@
         <h2>Κατανομή ΓΡ</h2>
         <p>Τοποθετεί τα ΓΡ στα κενά του ωρολογίου προγράμματος με βάση τους κανόνες του σχολείου, δείχνει τα εβδομαδιαία ΓΡ ανά εκπαιδευτικό και αποθηκεύει σε Excel.</p>
         <div class="tags"><span class="tag">Excel → Excel</span><span class="tag">Στον browser σου</span></div>
+        <div class="status" hidden></div>
+        <div class="sync" hidden></div>
+        <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+      <a class="card an" href="anaplirwseis/" data-app="an">
+        <div class="card-top"><div class="ico" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5h5M18.5 5v5"/></svg>
+        </div></div>
+        <h2>Αναπληρώσεις</h2>
+        <p>Δηλώνεις ποιοι λείπουν σήμερα και προτείνει ποιος καλύπτει κάθε ώρα: πρώτα όσοι έχουν ΓΡ, μετά όσοι έχουν κενό, με δίκαιη κατανομή μέσα στον μήνα. Βγάζει Word για ανάρτηση.</p>
+        <div class="tags"><span class="tag">Πρόγραμμα + ΓΡ → Word</span><span class="tag">Ιστορικό μήνα</span></div>
         <div class="status" hidden></div>
         <div class="sync" hidden></div>
         <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
@@ -214,7 +253,7 @@
 /* Θέμα (κοινό με τις εφαρμογές) και ειδοποίηση νέας έκδοσης */
 (function () {
   var TK = 'suite-theme', root = document.documentElement, tb = document.getElementById('themeBtn');
-  var LBL = { auto: '◐ Αυτόματο', light: '☀ Φωτεινό', dark: '☾ Σκούρο' };
+  var LBL = { auto: 'Θέμα: Αυτόματο', light: 'Θέμα: Φωτεινό', dark: 'Θέμα: Σκούρο' };
   function getT() { try { var v = localStorage.getItem(TK); return v === 'light' || v === 'dark' ? v : 'auto'; } catch (e) { return 'auto'; } }
   function apply(v) { if (v === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', v); tb.textContent = LBL[v]; tb.title = 'Θέμα για όλες τις εφαρμογές · πάτα για αλλαγή'; }
   apply(getT());
@@ -229,6 +268,105 @@
     ub.addEventListener('click', function () { location.reload(); });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {}); });
   }
+})();
+</script>
+<script>
+/* «Η εβδομάδα μου»: πρόοδος της εβδομάδας από ό,τι έχουν αποθηκεύσει οι εφαρμογές σε αυτή τη συσκευή, και «Λήψη όλων». */
+(function () {
+  function get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function num(k) { try { return +localStorage.getItem(k) || 0; } catch (e) { return 0; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function when(t) {
+    if (!t) return ''; var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var today = new Date(), y = new Date(); y.setDate(today.getDate() - 1);
+    return (d.toDateString() === today.toDateString() ? 'σήμερα' : d.toDateString() === y.toDateString() ? 'χθες' : p(d.getDate()) + '/' + p(d.getMonth() + 1)) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function ymd(d) { var p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+
+  var tt = get('suite-timetable-v1'), efs = get('efimeries-session-local-v1'), gr = get('gr-plan-v1'), ah = get('anapl-history-v1');
+  var efHas = !!(efs && efs.payload && efs.payload.assignments && Object.keys(efs.payload.assignments).length);
+  var grHas = !!(gr && gr.file);
+  var dlEf = num('suite-dl-ef'), dlGr = num('gr-saved-at');
+  var today = ymd(new Date()), anToday = Array.isArray(ah) ? ah.filter(function (e) { return e.date === today; })[0] : null;
+
+  // κάρτα Αναπληρώσεων
+  var anCard = document.querySelector('a.card[data-app="an"]');
+  if (anCard && Array.isArray(ah) && ah.length) {
+    var mon = today.slice(0, 7), n = 0;
+    ah.forEach(function (e) { if (e.date.slice(0, 7) === mon) e.rows.forEach(function (r) { if (r.cover) n++; }); });
+    var s = anCard.querySelector('.status');
+    s.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>' +
+      (anToday ? 'Σήμερα: <b>' + anToday.rows.filter(function (r) { return r.cover; }).length + '</b> · ' : '') + 'Μήνας: <b>' + n + '</b> αναπληρώσεις</span>';
+    s.hidden = false;
+  }
+
+  if (!tt && !efHas && !grHas) return;           // τίποτα ακόμα σε αυτή τη συσκευή
+  var week = document.getElementById('week'); week.hidden = false;
+  var ttName = tt && tt.fname, grSame = !ttName || !gr || gr.fname === ttName;
+  var steps = [
+    { st: tt ? 'ok' : 'none', t: 'Ωρολόγιο πρόγραμμα', d: tt ? esc(tt.fname || 'αρχείο') + ' · ' + when(tt.at) : 'Ανέβασέ το σε μία από τις εφαρμογές' },
+    { st: efHas ? (dlEf >= ((efs && efs.at) || 0) - 5000 && dlEf ? 'ok' : 'half') : 'none', t: 'Εφημερίες',
+      d: efHas ? ((efs.payload.dateLabel ? 'Εβδομάδα ' + esc(efs.payload.dateLabel) + ' · ' : '') + (dlEf ? 'Word: ' + when(dlEf) : 'Το Word δεν έχει κατέβει')) : 'Δεν έχουν βγει ακόμα' },
+    { st: grHas ? (!grSame ? 'bad' : dlGr && dlGr >= (gr.at || 0) - 5000 ? 'ok' : 'half') : 'none', t: 'ΓΡ',
+      d: grHas ? (!grSame ? 'Είναι για άλλο πρόγραμμα (' + esc(gr.fname) + ')' : (dlGr ? 'Excel: ' + when(dlGr) : 'Το Excel δεν έχει κατέβει')) : 'Δεν έχουν βγει ακόμα' },
+    { st: anToday ? 'ok' : 'none', t: 'Αναπληρώσεις σήμερα', d: anToday ? anToday.rows.filter(function (r) { return r.cover; }).length + ' ώρες καλύφθηκαν' : 'Καμία καταχώριση για σήμερα' }
+  ];
+  var MARK = { ok: '✓', half: '!', bad: '!', none: '' };
+  document.getElementById('steps').innerHTML = steps.map(function (s, i) {
+    return '<li><span class="dot ' + s.st + '" aria-hidden="true">' + (MARK[s.st] || (i + 1)) + '</span><div><b>' + s.t + '</b><span class="t">' + s.d + '</span></div></li>';
+  }).join('');
+  document.getElementById('weekSub').textContent = steps.slice(0, 3).every(function (s) { return s.st === 'ok'; }) ? 'Όλα έτοιμα για αυτή την εβδομάδα.' : 'Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή.';
+
+  // «Λήψη όλων»: φορτώνει αθόρυβα τις δύο εφαρμογές και ζητάει από την καθεμία το αρχείο της
+  var btn = document.getElementById('dlAll'), msg = document.getElementById('dlMsg');
+  btn.disabled = !(efHas || grHas);
+  btn.title = 'Κατεβάζει μαζί το Word των εφημεριών και το Excel των ΓΡ (σε ένα .zip)';
+  function frame(src) {
+    return new Promise(function (ok, no) {
+      var f = document.createElement('iframe');
+      f.style.cssText = 'position:fixed;width:1200px;height:800px;left:-3000px;top:0;border:0;visibility:hidden';
+      f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
+      var timer = setTimeout(function () { no(new Error('άργησε να ανοίξει')); }, 25000);
+      f.onload = function () {
+        var w = f.contentWindow, tries = 0;
+        (function wait() {
+          if (w.suiteExport && (!('suiteReady' in w) || w.suiteReady)) {
+            Promise.resolve(w.suiteReady).then(function () { return w.suiteExport(); }).then(function (r) { clearTimeout(timer); ok({ f: f, r: r }); }, function (e) { clearTimeout(timer); no(e); });
+          } else if (++tries < 100) setTimeout(wait, 150); else { clearTimeout(timer); no(new Error('δεν απάντησε')); }
+        })();
+      };
+      f.src = src; document.body.appendChild(f);
+    });
+  }
+  function loadZip() {
+    return window.JSZip ? Promise.resolve() : new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+  }
+  function save(blob, name) { var u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 60000); return u; }
+  btn.addEventListener('click', function () {
+    btn.disabled = true; btn.querySelector('span').textContent = 'Ετοιμασία…'; msg.hidden = true;
+    var jobs = [efHas ? frame('efimeries/') : null, grHas ? frame('gr/') : null];
+    Promise.all(jobs.map(function (j) { return j ? j.then(function (x) { return x; }, function (e) { return { err: e }; }) : null; })).then(function (res) {
+      var files = [], errs = [];
+      res.forEach(function (x, i) {
+        if (!x) return;
+        if (x.f) x.f.remove();
+        if (x.err || !x.r) errs.push((i ? 'ΓΡ' : 'Εφημερίες') + (x.err ? ': ' + (x.err.message || x.err) : ': δεν υπάρχει έτοιμη κατανομή'));
+        else files.push(x.r);
+      });
+      if (!files.length) throw new Error(errs.join(' · '));
+      return loadZip().then(function () {
+        var z = new JSZip(); files.forEach(function (f) { z.file(f.filename, f.blob); });
+        return z.generateAsync({ type: 'blob' });
+      }, function () { return null; }).then(function (zip) {
+        var links = files.map(function (f) { var u = URL.createObjectURL(f.blob); setTimeout(function () { URL.revokeObjectURL(u); }, 600000); return '<a href="' + u + '" download="' + esc(f.filename) + '">' + esc(f.filename) + '</a>'; });
+        var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+        if (zip) save(zip, 'Εβδομάδα_' + p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear() + '.zip');
+        msg.innerHTML = (zip ? 'Κατέβηκε ένα .zip με ' + files.length + ' αρχεία. ' : '') + 'Ξεχωριστά: ' + links.join(' · ') + (errs.length ? '<br>⚠ ' + esc(errs.join(' · ')) : '');
+        msg.hidden = false;
+      });
+    }).catch(function (e) { msg.textContent = '⚠ ' + (e.message || e); msg.hidden = false; })
+      .then(function () { btn.disabled = false; btn.querySelector('span').textContent = 'Λήψη όλων'; });
+  });
 })();
 </script>
 </body>

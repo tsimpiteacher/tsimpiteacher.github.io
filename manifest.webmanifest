@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Εφημερίες - Γραφείο",
   "short_name": "Εφημερίες - Γραφείο",
-  "description": "Σουίτα εργαλείων για το σχολείο: Εφημερίες και Κατανομή ΓΡ. Δημιουργός: Γιάννης Τσιμπινός.",
+  "description": "Σουίτα εργαλείων για το σχολείο: Εφημερίες, Κατανομή ΓΡ και Αναπληρώσεις. Δημιουργός: Γιάννης Τσιμπινός.",
   "lang": "el",
   "start_url": "./",
   "scope": "./",
@@ -10,22 +10,61 @@
   "background_color": "#EEF4FF",
   "theme_color": "#0B3FA8",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
     {
       "name": "Πίνακας Εφημεριών",
       "short_name": "Εφημερίες",
       "url": "./efimeries/",
-      "icons": [{ "src": "efimeries/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "efimeries/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Κατανομή ΓΡ",
       "short_name": "ΓΡ",
       "url": "./gr/",
-      "icons": [{ "src": "gr/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "gr/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Αναπληρώσεις",
+      "short_name": "Αναπληρώσεις",
+      "url": "./anaplirwseis/",
+      "icons": [
+        {
+          "src": "anaplirwseis/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

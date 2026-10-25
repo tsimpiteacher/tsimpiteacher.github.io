@@ -1,5 +1,5 @@
 /* Service worker αρχικής σελίδας: offline για το ίδιο το κέλυφος. Δεν αγγίζει τις εφαρμογές /efimeries/ και /gr/. */
-const CACHE = 'suite-hub-v3';
+const CACHE = 'suite-hub-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png', './logo.webp'];
 
 self.addEventListener('install', (e) => {
@@ -7,7 +7,7 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE && k.startsWith('suite-hub-')).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', (e) => {
