@@ -1,6 +1,6 @@
 /* Service worker αρχικής σελίδας: offline για το ίδιο το κέλυφος. Δεν αγγίζει τις εφαρμογές /efimeries/ και /gr/. */
-const CACHE = 'suite-hub-v1';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'suite-hub-v3';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png', './logo.webp'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => c.add(new Request(u, { cache: 'reload' }))))).then(() => self.skipWaiting()));
@@ -17,7 +17,7 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== location.origin) return;
   const base = new URL('./', self.registration.scope).pathname;           // π.χ. "/"
   const rel = url.pathname.slice(base.length);                              // π.χ. "efimeries/"
-  const own = rel === '' || rel === 'index.html' || rel === 'manifest.webmanifest' || rel === 'icon.svg';
+  const own = rel === '' || SHELL.indexOf('./' + rel) !== -1;
   if (!own) return;                                                          // άλλες εφαρμογές: κανονικά από το δίκτυο
   e.respondWith(
     fetch(req, { cache: 'no-cache' }).then((res) => {
