@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Αναπληρώσεις</title>
+<meta name="description" content="Προτάσεις αναπλήρωσης για τους απόντες εκπαιδευτικούς της ημέρας, με βάση το ωρολόγιο πρόγραμμα και τα ΓΡ.">
+<meta name="theme-color" content="#3949AB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Αναπληρώσεις">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>try{var t=localStorage.getItem('suite-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<style>
+:root{
+  --bg:#F1F3FA; --panel:#FFFFFF; --ink:#18203A; --muted:#58617E; --line:#D9DEEE; --soft:#E8EBF8;
+  --acc:#3949AB; --acc-ink:#FFFFFF; --acc-soft:#E3E7FB;
+  --gr:#C62828; --gr-soft:#FDEAEA; --ok:#2E7D4F; --ok-soft:#E3F2E8; --warn:#A85D00; --warn-soft:#FFF1DC; --bad:#B3261E; --bad-soft:#FBE3E1;
+  --shadow:0 1px 2px rgba(24,32,58,.05),0 6px 18px rgba(24,32,58,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10142A; --panel:#181D38; --ink:#E7EAF7; --muted:#9EA6C6; --line:#2B3257; --soft:#20264A;
+  --acc:#9FA8FF; --acc-ink:#10142A; --acc-soft:#262D5C;
+  --gr:#EF5350; --gr-soft:#3A1F22; --ok:#5CC28A; --ok-soft:#183025; --warn:#F0A64A; --warn-soft:#33261A; --bad:#FF8A80; --bad-soft:#3A1C1C;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10142A; --panel:#181D38; --ink:#E7EAF7; --muted:#9EA6C6; --line:#2B3257; --soft:#20264A;
+  --acc:#9FA8FF; --acc-ink:#10142A; --acc-soft:#262D5C;
+  --gr:#EF5350; --gr-soft:#3A1F22; --ok:#5CC28A; --ok-soft:#183025; --warn:#F0A64A; --warn-soft:#33261A; --bad:#FF8A80; --bad-soft:#3A1C1C;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45;
+  padding:20px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header h1{margin:0;font-size:clamp(24px,4vw,32px);line-height:1.1;letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px 20px}
+.card h2{margin:0 0 4px;font-size:17px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+input[type=date],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink);min-height:40px}
+.btn{font:inherit;font-weight:650;font-size:14px;display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 11px;border-radius:99px;background:var(--bad-soft);color:var(--bad);font-weight:650;font-size:13.5px}
+.chip button{border:0;background:transparent;color:inherit;font-size:17px;line-height:1;cursor:pointer;padding:0 4px}
+.chip small{font-weight:500;opacity:.85}
+.empty{text-align:center;padding:34px 20px}
+.empty h2{font-size:19px;margin:0 0 6px}
+.src{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.src b{color:var(--ink)}
+.file-btn{position:relative;overflow:hidden}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;font-weight:700;padding:8px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.per{font-weight:800;font-variant-numeric:tabular-nums;width:3.5em;white-space:nowrap}
+td.cls{font-weight:650;white-space:nowrap}
+td select{width:100%;max-width:330px}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.t0{background:var(--gr-soft);color:var(--gr)} .t1{background:var(--ok-soft);color:var(--ok)} .t2{background:var(--warn-soft);color:var(--warn)} .tn{background:var(--soft);color:var(--muted)} .tx{background:var(--bad-soft);color:var(--bad)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.status{font-size:13px;color:var(--muted);margin-left:auto}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px;font-size:12.5px;color:var(--muted);align-items:center}
+.month{display:grid;grid-template-columns:minmax(120px,240px) 1fr auto;gap:6px 10px;align-items:center;font-size:14px}
+.month .bar{height:10px;border-radius:99px;background:var(--acc-soft);overflow:hidden}
+.month .bar i{display:block;height:100%;background:var(--acc);border-radius:99px}
+.month .n{font-weight:800;font-variant-numeric:tabular-nums}
+.days{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.days .btn{font-size:13px;padding:6px 10px;min-height:32px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:9px;font-weight:600;max-width:calc(100% - 32px);z-index:50}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+@media (max-width:640px){
+  .card{padding:14px}
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tr{border-bottom:1px solid var(--line);padding:8px 0;display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center}
+  td{border:0;padding:0}
+  td.per{grid-row:1;grid-column:1}
+  td.cls{grid-row:1;grid-column:2}
+  td.tg{grid-row:1;grid-column:3}
+  td.abs{grid-row:2;grid-column:1 / -1;color:var(--muted);font-size:13px}
+  td.cov{grid-row:3;grid-column:1 / -1}
+  td select{max-width:none}
+  .status{margin-left:0;flex-basis:100%}
+  .month{grid-template-columns:minmax(0,1fr) 70px auto}
+}
+@media print{ .sbar,.no-print{display:none!important} body{background:#fff} .card{box-shadow:none;border:0} }
+</style>
+</head>
+<body>
+<!-- ===== Μπάρα σουίτας: αρχική + εναλλαγή Εφημερίες ⇄ ΓΡ ⇄ Αναπληρώσεις (ίδιο κομμάτι σε όλες τις εφαρμογές) ===== -->
+<nav class="sbar" id="suiteBar" data-app="an" aria-label="Εφαρμογές">
+  <a class="sbar-home" href="../" title="Όλες οι εφαρμογές">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>
+    <span class="sbar-hl">Εργαλεία</span>
+  </a>
+  <div class="sbar-right">
+  <button type="button" class="sbar-upd" id="sbarUpd" hidden title="Υπάρχει νέα έκδοση της εφαρμογής">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    <span>Νέα έκδοση · Ανανέωση</span>
+  </button>
+  <button type="button" class="sbar-theme" id="sbarTheme" aria-label="Θέμα"></button>
+  <div class="sbar-seg" role="group" aria-label="Εναλλαγή εφαρμογής">
+    <a class="sbar-opt ef" href="../efimeries/" data-to="ef">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 3v3.5M16 3v3.5"/></svg>
+      <span class="l">Εφημερίες</span><span class="s">Εφημ.</span>
+    </a>
+    <a class="sbar-opt gr" href="../gr/" data-to="gr">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M9 9v11.5M15 9v11.5"/></svg>
+      <span>ΓΡ</span>
+    </a>
+    <a class="sbar-opt an" href="../anaplirwseis/" data-to="an">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5h5M18.5 5v5"/></svg>
+      <span class="l">Αναπληρώσεις</span><span class="s">Αναπλ.</span>
+    </a>
+  </div>
+  </div>
+</nav>
+<style>
+  .sbar{
+    --sb-bg:#FFFFFF; --sb-line:rgba(20,30,50,.13); --sb-ink:#1D2433; --sb-muted:#5A6577; --sb-track:rgba(20,30,50,.06);
+    --sb-ef:#2F6B3F; --sb-gr:#C62828; --sb-an:#3949AB; --sb-on-ink:#FFFFFF;
+    box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    max-width:var(--sb-max,1000px); margin:0 auto 18px; padding:6px;
+    background:var(--sb-bg); border:1px solid var(--sb-line); border-radius:14px;
+    box-shadow:0 1px 2px rgba(20,30,50,.05);
+    font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; color:var(--sb-ink);
+  }
+  .sbar[data-app="gr"]{--sb-max:1500px;} .sbar[data-app="an"]{--sb-max:1100px;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .sbar{
+      --sb-bg:rgba(255,255,255,.05); --sb-line:rgba(255,255,255,.14); --sb-ink:#E8EDF5; --sb-muted:#A3AEC0; --sb-track:rgba(255,255,255,.06);
+      --sb-ef:#7BD08F; --sb-gr:#EF5350; --sb-an:#9FA8FF; --sb-on-ink:#0D1410;
+    }
+  }
+  :root[data-theme="dark"] .sbar{
+    --sb-bg:rgba(255,255,255,.05); --sb-line:rgba(255,255,255,.14); --sb-ink:#E8EDF5; --sb-muted:#A3AEC0; --sb-track:rgba(255,255,255,.06);
+    --sb-ef:#7BD08F; --sb-gr:#EF5350; --sb-an:#9FA8FF; --sb-on-ink:#0D1410;
+  }
+  .sbar *{box-sizing:border-box;}
+  .sbar a{color:inherit; text-decoration:none; -webkit-tap-highlight-color:transparent;}
+  .sbar-home{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; color:var(--sb-muted) !important;}
+  .sbar-home:hover{background:var(--sb-track); color:var(--sb-ink) !important;}
+  .sbar-right{display:flex; align-items:center; gap:6px; min-width:0;}
+  .sbar button{font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .sbar-theme{display:inline-grid; place-items:center; width:36px; height:36px; padding:0; border:0; border-radius:10px; background:transparent; color:var(--sb-muted) !important;}
+  .sbar-theme:hover{background:var(--sb-track); color:var(--sb-ink) !important;}
+  .sbar-upd{display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border:0; border-radius:10px; background:#F2B233; color:#2A1D00 !important; font-weight:700 !important;}
+  .sbar-upd[hidden]{display:none;}
+  .sbar button:focus-visible{outline:2px solid var(--sb-ink); outline-offset:2px;}
+  @media (max-width:560px){ .sbar-upd span{display:none;} .sbar-upd{padding:9px;} }
+  .sbar-seg{display:inline-flex; gap:4px; padding:3px; background:var(--sb-track); border-radius:11px;}
+  .sbar-opt{display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:8px; color:var(--sb-muted) !important; transition:background .15s, color .15s;}
+  .sbar-opt:hover{color:var(--sb-ink) !important; background:var(--sb-bg);}
+  .sbar-opt[aria-current="page"]{color:var(--sb-on-ink) !important; cursor:default;}
+  .sbar-opt.ef[aria-current="page"]{background:var(--sb-ef);}
+  .sbar-opt.gr[aria-current="page"]{background:var(--sb-gr);}
+  .sbar-opt.an[aria-current="page"]{background:var(--sb-an);}
+  .sbar-opt .s{display:none;}
+  @media (max-width:640px){ .sbar-opt .l{display:none;} .sbar-opt .s{display:inline;} .sbar-opt{padding:7px 9px; gap:5px;} .sbar-opt svg{display:none;} }
+  .sbar a:focus-visible{outline:2px solid var(--sb-ink); outline-offset:2px;}
+  @media (max-width:520px){ .sbar-hl{display:none;} .sbar-home{padding:8px;} }
+  @media (max-width:360px){ .sbar-opt{padding:7px 7px;} .sbar-theme{width:32px;} }
+  @media (prefers-reduced-motion: reduce){ .sbar-opt{transition:none;} }
+  @media print{ .sbar{display:none !important;} }
+</style>
+<script>
+(function () {
+  var bar = document.getElementById('suiteBar');
+  if (!bar) return;
+  var app = bar.getAttribute('data-app');
+  var cur = bar.querySelector('.sbar-opt[data-to="' + app + '"]');
+  if (cur) {
+    cur.setAttribute('aria-current', 'page');
+    cur.addEventListener('click', function (e) { e.preventDefault(); });
+  }
+  try { localStorage.setItem('suite-last-app', app); } catch (e) { /* αγνόησε */ }
+  // Προφόρτωση της άλλης εφαρμογής μόλις ο δείκτης/δάχτυλο πάει στο κουμπί, για άμεση εναλλαγή.
+  var done = false;
+  function prefetch() {
+    if (done) return; done = true;
+    Array.prototype.forEach.call(bar.querySelectorAll('.sbar-opt:not([aria-current])'), function (other) {
+      var l = document.createElement('link'); l.rel = 'prefetch'; l.href = other.href; document.head.appendChild(l);
+    });
+  }
+  bar.addEventListener('pointerenter', prefetch, { once: true });
+  bar.addEventListener('touchstart', prefetch, { once: true, passive: true });
+  bar.addEventListener('focusin', prefetch, { once: true });
+  // ---- Θέμα: ένα κουμπί για όλη τη σουίτα (αυτόματο → φωτεινό → σκούρο), κοινό για όλες τις εφαρμογές ----
+  var TK = 'suite-theme', root = document.documentElement, tb = document.getElementById('sbarTheme');
+  var ICONS = {
+    auto: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/></svg>',
+    light: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>',
+    dark: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>'
+  };
+  var NAMES = { auto: 'αυτόματο (όπως η συσκευή)', light: 'φωτεινό', dark: 'σκούρο' };
+  function getTheme() { try { var v = localStorage.getItem(TK); return v === 'light' || v === 'dark' ? v : 'auto'; } catch (e) { return 'auto'; } }
+  function applyTheme(v) {
+    if (v === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', v);
+    if (tb) { tb.innerHTML = ICONS[v]; tb.title = 'Θέμα: ' + NAMES[v] + ' · πάτα για αλλαγή'; }
+  }
+  applyTheme(getTheme());
+  if (tb) tb.addEventListener('click', function () {
+    var next = { auto: 'light', light: 'dark', dark: 'auto' }[getTheme()];
+    try { localStorage.setItem(TK, next); } catch (e) { /* αγνόησε */ }
+    applyTheme(next);
+  });
+  window.addEventListener('storage', function (e) { if (e.key === TK) applyTheme(getTheme()); });
+
+  // ---- Νέα έκδοση: όταν ανέβει ενημέρωση ενώ η εφαρμογή είναι ανοιχτή ----
+  var ub = document.getElementById('sbarUpd');
+  if ('serviceWorker' in navigator && ub) {
+    var oldUrl = navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      var c = navigator.serviceWorker.controller;
+      if (oldUrl && c && c.scriptURL === oldUrl) ub.hidden = false;   // ίδια εφαρμογή, νεότερη έκδοση
+      oldUrl = oldUrl || (c && c.scriptURL);
+    });
+    ub.addEventListener('click', function () { location.reload(); });
+    var check = function () { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {}); };
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+    setInterval(check, 30 * 60 * 1000);
+  }
+})();
+</script>
+<!-- ===== τέλος μπάρας σουίτας ===== -->
+<div class="wrap">
+  <header>
+    <h1>Αναπληρώσεις</h1>
+    <p>Διάλεξε ημέρα και απόντες· η εφαρμογή προτείνει ποιος καλύπτει κάθε ώρα: πρώτα όσοι έχουν <b>ΓΡ</b> εκείνη την ώρα, μετά όσοι έχουν <b>κενό</b>, πάντα με όσους έκαναν τις λιγότερες αναπληρώσεις τον μήνα.</p>
+  </header>
+
+  <div class="card empty" id="empty" hidden>
+    <h2>Δεν βρέθηκε ωρολόγιο πρόγραμμα</h2>
+    <p class="sub">Ανέβασε το πρόγραμμα στις Εφημερίες ή στο ΓΡ (το παίρνει αυτόματα από εκεί), ή διάλεξε εδώ το αρχείο .xlsx.</p>
+    <label class="btn primary file-btn">Επιλογή αρχείου .xlsx<input type="file" id="file" accept=".xlsx"></label>
+  </div>
+
+  <div id="main" hidden>
+    <div class="card">
+      <div class="src" id="src"></div>
+      <div class="row" style="margin-top:12px">
+        <label class="f">Ημερομηνία<input type="date" id="date"></label>
+        <label class="f" style="flex:1;min-width:220px">Απών/ούσα<select id="addAbs"><option value="">+ Προσθήκη απόντα…</option></select></label>
+      </div>
+      <div class="chips" id="absList"></div>
+      <p class="sub" id="dayNote" style="margin:10px 0 0"></p>
+    </div>
+
+    <div class="grid2" style="margin-top:16px">
+      <div class="card">
+        <h2 id="planTitle">Αναπληρώσεις ημέρας</h2>
+        <div class="legend"><span class="tag t0">ΓΡ</span> είχε ΓΡ εκείνη την ώρα <span class="tag t1">κενό</span> κενό ανάμεσα σε μαθήματα <span class="tag t2">άκρη</span> πριν/μετά τα μαθήματά του</div>
+        <div id="plan"></div>
+        <div class="actions no-print">
+          <button class="btn" id="redo" type="button">Νέα πρόταση</button>
+          <button class="btn" id="saveDay" type="button">Αποθήκευση ημέρας</button>
+          <button class="btn primary" id="word" type="button">Λήψη Word</button>
+          <span class="status" id="status"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h2 id="monthTitle">Αναπληρώσεις μήνα</h2>
+        <p class="sub">Από τις ημέρες που αποθηκεύτηκαν σε αυτή τη συσκευή. Χρησιμοποιούνται για δίκαιη κατανομή.</p>
+        <div class="month" id="month"></div>
+        <div class="days" id="days"></div>
+        <div class="actions no-print" style="margin-top:12px">
+          <button class="btn" id="exportHist" type="button">Αντίγραφο ιστορικού</button>
+          <label class="btn file-btn">Επαναφορά…<input type="file" id="importHist" accept=".json"></label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="../gr/exceljs.min.js"></script>
+<script>if (!window.ExcelJS) document.write('<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"><\/script>');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ΓΡ scheduling engine — shared by the page and the Node test.
+const DAYS = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή'];
+const GR = 'ΓΡ';
+const PAR = 'ΓΟΝ';      // ώρα ενημέρωσης γονέων
+const PARENT_DAY = 2;  // Τετάρτη
+
+function colName(n) { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+function colNum(s) { let n = 0; for (const ch of s) n = n * 26 + ch.charCodeAt(0) - 64; return n; }
+function parseAddr(a) { const m = /^([A-Z]+)(\d+)$/.exec(a.replace(/\$/g, '')); return { c: colNum(m[1]), r: +m[2] }; }
+function txt(v) {
+  if (v == null) return '';
+  if (typeof v === 'object') {
+    if (v.richText) return v.richText.map(x => x.text).join('').trim();
+    if (v.formula || v.sharedFormula) return '';
+    if (v.text) return String(v.text).trim();
+    if ('result' in v) return v.result == null ? '' : String(v.result).trim();
+  }
+  return String(v).trim();
+}
+const norm = s => s.replace(/\s+/g, ' ').trim();
+
+// A grey fill marks a teacher as unavailable (e.g. at another school) that day.
+function isGrey(fill) {
+  if (!fill || fill.type !== 'pattern' || !fill.pattern || fill.pattern === 'none') return false;
+  const c = fill.fgColor || {};
+  if (c.theme != null) {
+    const tint = c.tint || 0;
+    if (c.theme === 0 || c.theme === 2) return tint < -0.04;          // background shades
+    if (c.theme === 1 || c.theme === 3) return tint > 0.3;            // text colour lightened
+    return false;
+  }
+  if (c.argb) {
+    const h = c.argb.slice(-6), r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return Math.max(r, g, b) - Math.min(r, g, b) <= 18 && r < 0xF2 && r > 0x50;
+  }
+  if (c.indexed != null) return [22, 23, 55].includes(c.indexed);
+  return false;
+}
+
+function parseSheet(ws) {
+  // locate header row with day names
+  let dayRow = 0;
+  for (let r = 1; r <= Math.min(ws.rowCount, 30) && !dayRow; r++)
+    ws.getRow(r).eachCell({ includeEmpty: false }, c => { if (txt(c.value) === DAYS[0]) dayRow = r; });
+  if (!dayRow) throw new Error('Δεν βρέθηκε η γραμμή με τις ημέρες (Δευτέρα … Παρασκευή).');
+  const perRow = dayRow + 1;
+  // day start columns
+  const dayStarts = [];
+  ws.getRow(dayRow).eachCell({ includeEmpty: false }, c => { const i = DAYS.indexOf(txt(c.value)); if (i >= 0) dayStarts.push({ day: i, col: c.col }); });
+  dayStarts.sort((a, b) => a.col - b.col);
+  const slots = [];
+  dayStarts.forEach((d, k) => {
+    const end = k + 1 < dayStarts.length ? dayStarts[k + 1].col - 1 : d.col + 9;
+    for (let c = d.col; c <= end; c++) {
+      const p = parseInt(txt(ws.getCell(perRow, c).value), 10);
+      if (p > 0) slots.push({ col: c, day: d.day, period: p });
+      else if (k + 1 === dayStarts.length) break;
+    }
+  });
+  const maxPeriod = {};
+  slots.forEach(s => { maxPeriod[s.day] = Math.max(maxPeriod[s.day] || 0, s.period); });
+  const firstCol = slots[0].col, lastCol = slots[slots.length - 1].col;
+
+  // merges
+  const merges = (ws.model.merges || []).map(m => { const [a, b] = m.split(':'); const A = parseAddr(a), B = parseAddr(b || a); return { r1: A.r, c1: A.c, r2: B.r, c2: B.c }; });
+  const mergeAt = (r, c) => merges.find(m => r >= m.r1 && r <= m.r2 && c >= m.c1 && c <= m.c2);
+
+  // teacher rows
+  const teachers = [];
+  for (let r = perRow + 1; r <= ws.rowCount; r++) {
+    const name = norm(txt(ws.getCell(r, 1).value));
+    if (!name) break;
+    const spec = norm(txt(ws.getCell(r, 2).value));
+    const cells = slots.map(s => {
+      const m = mergeAt(r, s.col);
+      const v = m ? txt(ws.getCell(m.r1, m.c1).value) : txt(ws.getCell(r, s.col).value);
+      const cell = m ? ws.getCell(m.r1, m.c1) : ws.getCell(r, s.col);
+      return { v, merged: !!m, wide: m ? (m.c2 - m.c1 + 1) : 1, grey: isGrey(cell.fill) };
+    });
+    const blockedDays = [...new Set(cells.map((c, i) => c.grey ? slots[i].day : null).filter(d => d != null))];
+    const staff = cells.some(c => c.wide >= 8); // e.g. ΝΟΣΗΛΕΥΤΗΣ across the week
+    teachers.push({
+      row: r, name, spec, staff, blockedDays,
+      grey: cells.map(c => c.grey),
+      cells: cells.map(c => c.v === GR && !c.merged ? 'G' : (c.v === PAR && !c.merged) ? 'F' : (c.v ? 'L' : 'F')),
+      labels: cells.map(c => (c.v === GR || c.v === PAR ? '' : c.v)),
+      fileParent: cells.findIndex(c => c.v === PAR && !c.merged),
+      parent: -1,
+    });
+  }
+  // stats row (existing COUNTIF row) or two rows below the table
+  const lastTeacherRow = teachers.length ? teachers[teachers.length - 1].row : perRow;
+  let statsRow = 0;
+  for (let r = lastTeacherRow + 1; r <= Math.min(ws.rowCount, lastTeacherRow + 10) && !statsRow; r++) {
+    const v = ws.getCell(r, firstCol).value;
+    if (v && typeof v === 'object' && v.formula && /COUNTIF/i.test(v.formula)) statsRow = r;
+  }
+  if (!statsRow) statsRow = lastTeacherRow + 2;
+  return { dayRow, perRow, slots, maxPeriod, firstCol, lastCol, teachers, statsRow, title: [txt(ws.getCell(1, 1).value), txt(ws.getCell(2, 1).value)].filter(Boolean).join(' · ') };
+}
+
+
+</script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const P = { tt:'suite-timetable-v1', plan:'gr-plan-v1', efs:'efimeries-session-local-v1', hist:'anapl-history-v1', draft:'anapl-draft-v1' };
+const ls = { get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { return false; } } };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const key = s => String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+const MONTHS = ['Ιανουαρίου','Φεβρουαρίου','Μαρτίου','Απριλίου','Μαΐου','Ιουνίου','Ιουλίου','Αυγούστου','Σεπτεμβρίου','Οκτωβρίου','Νοεμβρίου','Δεκεμβρίου'];
+const MONTHS_NOM = ['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+function toast(m){ const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 3200); }
+function fromB64(s){ const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
+function ymd(d){ const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+function parseYmd(s){ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; }
+function dayIndexOf(d){ const w = d.getDay(); return w >= 1 && w <= 5 ? w - 1 : -1; }
+function niceDate(d){ return `${DAYS[dayIndexOf(d)] || ['Κυριακή','','','','','','Σάββατο'][d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
+function defaultDate(){ const d = new Date(); if (d.getHours() >= 15) d.setDate(d.getDate() + 1); while (dayIndexOf(d) < 0) d.setDate(d.getDate() + 1); return d; }
+
+const A = { model:null, srcLabel:'', grSrc:'', gr:[], par:[], duty:null, date:defaultDate(), absent:[], over:{}, seed:1, rows:[] };
+
+/* ---------- πηγή: πρόγραμμα + ΓΡ από τις άλλες εφαρμογές της σουίτας ---------- */
+async function loadSource(manual){
+  let buf = null, fname = '', plan = null;
+  if (manual) { buf = manual.buf; fname = manual.name; }
+  else {
+    const pl = ls.get(P.plan), tt = ls.get(P.tt);
+    const planOk = pl && pl.file, ttOk = tt && tt.file;
+    if (planOk && (!ttOk || (pl.at || 0) >= (tt.at || 0) || pl.fname === tt.fname)) { buf = fromB64(pl.file); fname = pl.fname; plan = pl; }
+    else if (ttOk) { buf = fromB64(tt.file); fname = tt.fname; }
+  }
+  if (!buf) { $('empty').hidden = false; $('main').hidden = true; return; }
+  if (!window.ExcelJS) { toast('Η βιβλιοθήκη Excel δεν φόρτωσε — χρειάζεται σύνδεση την πρώτη φορά.'); return; }
+  try {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf.slice(0));
+    const m = parseSheet(wb.worksheets[0]);
+    A.model = m; A.fname = fname;
+    const fits = a => Array.isArray(a) && a.length === m.teachers.length;
+    if (plan && fits(plan.assign)) { A.gr = plan.assign.map(a => new Set(a)); A.grSrc = 'από την εφαρμογή ΓΡ'; }
+    else { A.gr = m.teachers.map(t => new Set(t.cells.map((c, i) => c === 'G' ? i : -1).filter(i => i >= 0))); A.grSrc = A.gr.some(s => s.size) ? 'από το αρχείο' : 'δεν υπάρχουν ακόμα'; }
+    A.par = plan && fits(plan.parents) ? plan.parents.slice() : m.teachers.map(t => t.fileParent);
+    $('empty').hidden = true; $('main').hidden = false;
+    readDuty();
+    fillAbsentSelect(); render();
+  } catch(e) { toast('Δεν διαβάστηκε το πρόγραμμα: ' + (e.message || e)); $('empty').hidden = false; $('main').hidden = true; }
+}
+function readDuty(){
+  const s = ls.get(P.efs), a = s && s.payload && s.payload.assignments;
+  A.duty = null;
+  if (!a) return;
+  const map = {};
+  Object.keys(a).forEach(day => {
+    const d = DAYS.findIndex(x => key(x) === key(day)); if (d < 0 || !a[day]) return;
+    const walk = v => { if (typeof v === 'string') (map[d] = map[d] || new Set()).add(key(v)); else if (Array.isArray(v)) v.forEach(walk); };
+    walk(a[day].slotsA); walk(a[day].slotsB);
+  });
+  A.duty = map;
+}
+
+/* ---------- ιστορικό ---------- */
+function hist(){ const h = ls.get(P.hist); return Array.isArray(h) ? h : []; }
+function monthCounts(exceptDate){
+  const d = A.date, pre = ymd(d).slice(0, 7), c = {};
+  hist().forEach(e => { if (e.date.slice(0, 7) !== pre || e.date === exceptDate) return; e.rows.forEach(r => { if (r.cover) c[key(r.cover)] = (c[key(r.cover)] || 0) + 1; }); });
+  return c;
+}
+
+/* ---------- πρόταση ---------- */
+function rand(seed){ let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+function teacherInfo(ti, d){
+  const m = A.model, t = m.teachers[ti];
+  const per = m.slots.map((s, i) => s.day === d && t.cells[i] === 'L' ? s.period : null).filter(p => p != null);
+  return { first: per.length ? Math.min(...per) : null, last: per.length ? Math.max(...per) : null, any: per.length > 0 };
+}
+// tier: 0 = ΓΡ εκείνη την ώρα, 1 = κενό ανάμεσα σε μαθήματα, 2 = πριν/μετά τα μαθήματα της μέρας, null = δεν μπορεί
+function tierOf(ui, si, d, absentSet){
+  const m = A.model, t = m.teachers[ui];
+  if (t.staff || absentSet.has(ui) || t.blockedDays.includes(d) || (t.grey && t.grey[si])) return null;
+  if (t.cells[si] === 'L' || A.par[ui] === si) return null;
+  const inf = teacherInfo(ui, d);
+  if (!inf.any) return null;                       // δεν είναι στο σχολείο εκείνη τη μέρα
+  if (A.gr[ui] && A.gr[ui].has(si)) return 0;
+  const p = m.slots[si].period;
+  return p > inf.first && p < inf.last ? 1 : 2;
+}
+function needs(){
+  const m = A.model, d = dayIndexOf(A.date), out = [];
+  if (d < 0) return out;
+  A.absent.forEach(ai => {
+    const t = m.teachers[ai];
+    m.slots.forEach((s, si) => { if (s.day === d && t.cells[si] === 'L') out.push({ si, period: s.period, cls: t.labels[si] || '', ai, k: `${ai}:${si}` }); });
+  });
+  return out.sort((a, b) => a.period - b.period || a.cls.localeCompare(b.cls, 'el'));
+}
+function propose(){
+  const m = A.model, d = dayIndexOf(A.date), abs = new Set(A.absent);
+  const rows = needs(), mc = monthCounts(ymd(A.date)), today = {}, busy = new Set(), rnd = rand(A.seed * 7919 + +ymd(A.date).replace(/-/g, ''));
+  const tie = m.teachers.map(() => rnd());
+  rows.forEach(r => { r.cands = m.teachers.map((t, ui) => ({ ui, tier: tierOf(ui, r.si, d, abs) })).filter(c => c.tier != null); });
+  // πρώτα οι χειροκίνητες επιλογές
+  rows.forEach(r => {
+    if (!(r.k in A.over)) return;
+    const name = A.over[r.k];
+    if (!name) { r.cover = -1; r.manual = true; return; }
+    const ui = m.teachers.findIndex(t => t.name === name);
+    if (ui >= 0) { r.cover = ui; r.manual = true; busy.add(`${ui}:${r.si}`); today[ui] = (today[ui] || 0) + 1; }
+  });
+  // μετά οι υπόλοιπες, ξεκινώντας από τις ώρες με τις λιγότερες επιλογές
+  const order = rows.filter(r => !r.manual).sort((a, b) => a.cands.length - b.cands.length);
+  order.forEach(r => {
+    const score = c => c.tier * 1000 + ((mc[key(m.teachers[c.ui].name)] || 0) + (today[c.ui] || 0) * 1.5) * 10 + (today[c.ui] >= 2 ? 500 : 0) + tie[c.ui];
+    const free = r.cands.filter(c => !busy.has(`${c.ui}:${r.si}`)).sort((a, b) => score(a) - score(b));
+    if (!free.length) { r.cover = -1; return; }
+    r.cover = free[0].ui; busy.add(`${r.cover}:${r.si}`); today[r.cover] = (today[r.cover] || 0) + 1;
+  });
+  rows.forEach(r => { const c = r.cands.find(x => x.ui === r.cover); r.tier = r.cover >= 0 ? (c ? c.tier : 3) : null; });
+  A.rows = rows; A.mc = mc; A.today = today;
+  return rows;
+}
+
+/* ---------- προβολή ---------- */
+const TIER = [['t0','ΓΡ'], ['t1','κενό'], ['t2','άκρη'], ['tx','εκτός κανόνων']];
+function fillAbsentSelect(){
+  const sel = $('addAbs'), m = A.model, d = dayIndexOf(A.date);
+  const opts = m.teachers.map((t, i) => ({ t, i })).filter(o => !o.t.staff && !A.absent.includes(o.i))
+    .sort((a, b) => a.t.name.localeCompare(b.t.name, 'el'))
+    .map(o => { const n = d >= 0 ? o.t.cells.filter((c, si) => c === 'L' && m.slots[si].day === d).length : 0; return `<option value="${o.i}">${esc(o.t.name)}${d >= 0 ? ` · ${n} ${n === 1 ? 'ώρα' : 'ώρες'}` : ''}</option>`; });
+  sel.innerHTML = '<option value="">+ Προσθήκη απόντα…</option>' + opts.join('');
+}
+function render(){
+  const m = A.model; if (!m) return;
+  const d = dayIndexOf(A.date);
+  $('date').value = ymd(A.date);
+  $('src').innerHTML = `<span>Πρόγραμμα: <b>${esc(A.fname || m.title || '')}</b></span><span>ΓΡ: <b>${esc(A.grSrc)}</b></span>` +
+    (A.duty ? '<span>Εφημερίες: <b>από τις Εφημερίες</b></span>' : '');
+  $('absList').innerHTML = A.absent.map(ai => {
+    const t = m.teachers[ai], n = d >= 0 ? t.cells.filter((c, si) => c === 'L' && m.slots[si].day === d).length : 0;
+    return `<span class="chip">${esc(t.name)} <small>${n} ${n === 1 ? 'ώρα' : 'ώρες'}</small><button type="button" data-rm="${ai}" aria-label="Αφαίρεση ${esc(t.name)}">×</button></span>`;
+  }).join('');
+  $('dayNote').textContent = d < 0 ? 'Η ημερομηνία δεν είναι εργάσιμη (Σάββατο/Κυριακή).' : niceDate(A.date) + (A.absent.length ? '' : ' · πρόσθεσε τους απόντες της ημέρας.');
+  $('planTitle').textContent = 'Αναπληρώσεις · ' + (d >= 0 ? niceDate(A.date) : '—');
+  const rows = d >= 0 ? propose() : (A.rows = []);
+  const host = $('plan');
+  if (!A.absent.length) host.innerHTML = '<p class="sub" style="margin:8px 0 0">Δεν έχεις δηλώσει απόντες.</p>';
+  else if (!rows.length) host.innerHTML = '<p class="sub" style="margin:8px 0 0">Οι απόντες δεν έχουν μάθημα αυτή τη μέρα.</p>';
+  else {
+    const names = m.teachers;
+    let h = '<table><thead><tr><th>Ώρα</th><th>Τμήμα</th><th>Απών/ούσα</th><th>Αναπληρωτής/τρια</th><th></th></tr></thead><tbody>';
+    rows.forEach(r => {
+      const opts = ['<option value="">— χωρίς αναπλήρωση —</option>'].concat(
+        r.cands.slice().sort((a, b) => a.tier - b.tier || names[a.ui].name.localeCompare(names[b.ui].name, 'el'))
+          .map(c => { const n = (A.mc[key(names[c.ui].name)] || 0); return `<option value="${esc(names[c.ui].name)}"${c.ui === r.cover ? ' selected' : ''}>${esc(names[c.ui].name)} · ${TIER[c.tier][1]} · ${n} τον μήνα</option>`; }));
+      if (r.cover >= 0 && !r.cands.some(c => c.ui === r.cover)) opts.push(`<option value="${esc(names[r.cover].name)}" selected>${esc(names[r.cover].name)} · εκτός κανόνων</option>`);
+      const tg = r.cover < 0 ? '<span class="tag tn">κενό τμήμα</span>' : `<span class="tag ${TIER[r.tier][0]}">${TIER[r.tier][1]}</span>`;
+      h += `<tr><td class="per">${r.period}η</td><td class="cls">${esc(r.cls)}</td><td class="abs">${esc(names[r.ai].name)}</td><td class="cov"><select data-k="${r.k}" aria-label="Αναπληρωτής για ${r.period}η ώρα ${esc(r.cls)}">${opts.join('')}</select></td><td class="tg">${tg}</td></tr>`;
+    });
+    host.innerHTML = h + '</tbody></table>';
+  }
+  const uncovered = rows.filter(r => r.cover < 0).length;
+  $('status').textContent = rows.length ? `${rows.length - uncovered}/${rows.length} ώρες καλύπτονται` + (saved() ? ' · αποθηκευμένη' : '') : '';
+  ['redo','saveDay','word'].forEach(id => $(id).disabled = !rows.length);
+  renderMonth();
+  ls.set(P.draft, { date: ymd(A.date), absent: A.absent.map(i => m.teachers[i].name), over: A.over, seed: A.seed });
+}
+function saved(){ const e = hist().find(x => x.date === ymd(A.date)); return e && JSON.stringify(e.rows) === JSON.stringify(rowsForSave()); }
+function renderMonth(){
+  const pre = ymd(A.date).slice(0, 7), c = {}, names = {};
+  const all = hist();
+  all.forEach(e => { if (e.date.slice(0, 7) !== pre) return; e.rows.forEach(r => { if (!r.cover) return; const k = key(r.cover); c[k] = (c[k] || 0) + 1; names[k] = r.cover; }); });
+  $('monthTitle').textContent = 'Αναπληρώσεις · ' + MONTHS_NOM[A.date.getMonth()] + ' ' + A.date.getFullYear();
+  const list = Object.keys(c).sort((a, b) => c[b] - c[a] || names[a].localeCompare(names[b], 'el'));
+  const mx = Math.max(1, ...Object.values(c));
+  $('month').innerHTML = list.length ? list.map(k => `<span>${esc(names[k])}</span><span class="bar"><i style="width:${Math.round(c[k] / mx * 100)}%"></i></span><span class="n">${c[k]}</span>`).join('')
+    : '<span class="sub" style="grid-column:1/-1;margin:0">Καμία αποθηκευμένη ημέρα αυτόν τον μήνα.</span>';
+  const days = all.filter(e => e.date.slice(0, 7) === pre).sort((a, b) => a.date < b.date ? -1 : 1);
+  $('days').innerHTML = days.map(e => { const dd = parseYmd(e.date); return `<button type="button" class="btn" data-day="${e.date}" title="Άνοιγμα">${DAYS[dayIndexOf(dd)] ? DAYS[dayIndexOf(dd)].slice(0, 3) : ''} ${dd.getDate()}/${dd.getMonth() + 1} · ${e.rows.filter(r => r.cover).length}</button>`; }).join('');
+}
+
+/* ---------- αποθήκευση / Word ---------- */
+function rowsForSave(){ const m = A.model; return A.rows.map(r => ({ period: r.period, cls: r.cls, absent: m.teachers[r.ai].name, cover: r.cover >= 0 ? m.teachers[r.cover].name : '', tier: r.tier })); }
+function saveDay(quiet){
+  if (!A.rows.length) return;
+  const date = ymd(A.date), list = hist().filter(e => e.date !== date);
+  list.push({ date, at: Date.now(), absent: A.absent.map(i => A.model.teachers[i].name), over: A.over, rows: rowsForSave() });
+  list.sort((a, b) => a.date < b.date ? -1 : 1);
+  if (!ls.set(P.hist, list.slice(-400))) { toast('Δεν χωράει άλλο ιστορικό σε αυτόν τον browser.'); return; }
+  try { localStorage.setItem('suite-an-saved', String(Date.now())); } catch(e) {}
+  if (!quiet) toast('Αποθηκεύτηκε η ημέρα · μετράει στη δίκαιη κατανομή του μήνα');
+  render();
+}
+const X = s => esc(s).replace(/'/g, '&apos;');
+function para(text, o = {}){
+  return `<w:p><w:pPr><w:jc w:val="${o.align || 'left'}"/><w:spacing w:before="0" w:after="${o.after == null ? 120 : o.after}"/></w:pPr><w:r><w:rPr>${o.b ? '<w:b/>' : ''}<w:sz w:val="${o.sz || 22}"/><w:szCs w:val="${o.sz || 22}"/></w:rPr><w:t xml:space="preserve">${X(text)}</w:t></w:r></w:p>`;
+}
+function cell(text, w, o = {}){
+  const b = 'w:val="single" w:sz="6" w:space="0" w:color="303A5C"';
+  return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/><w:tcBorders><w:top ${b}/><w:left ${b}/><w:bottom ${b}/><w:right ${b}/></w:tcBorders>${o.fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${o.fill}"/>` : ''}<w:vAlign w:val="center"/></w:tcPr>${para(text, { align: o.align || 'center', b: o.b, sz: o.sz || 22, after: 0 })}</w:tc>`;
+}
+function buildDocx(){
+  const m = A.model, W = [900, 1300, 2700, 2700, 1900];
+  let rows = `<w:tr><w:trPr><w:tblHeader/><w:trHeight w:val="420"/></w:trPr>${['Ώρα','Τμήμα','Απών/ούσα','Αναπληρωτής/τρια','Υπογραφή'].map((t, i) => cell(t, W[i], { b: true, fill: 'DDE2F5' })).join('')}</w:tr>`;
+  A.rows.forEach(r => {
+    rows += `<w:tr><w:trPr><w:trHeight w:val="440"/></w:trPr>${cell(r.period + 'η', W[0], { b: true })}${cell(r.cls, W[1])}${cell(m.teachers[r.ai].name, W[2], { align: 'left' })}${cell(r.cover >= 0 ? m.teachers[r.cover].name : '—', W[3], { align: 'left', b: r.cover >= 0 })}${cell('', W[4])}</w:tr>`;
+  });
+  const grid = W.map(w => `<w:gridCol w:w="${w}"/>`).join('');
+  const body = (m.title ? para(m.title.split(' · ')[0], { align: 'center', b: true, sz: 24 }) : '') +
+    para('ΑΝΑΠΛΗΡΩΣΕΙΣ', { align: 'center', b: true, sz: 32, after: 60 }) +
+    para(niceDate(A.date), { align: 'center', sz: 26, after: 240 }) +
+    `<w:tbl><w:tblPr><w:tblW w:w="${W.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:jc w:val="center"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows}</w:tbl>` +
+    para('', { after: 360 }) + para('Ο/Η Διευθυντής/ντρια', { align: 'right', sz: 22, after: 0 });
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1000" w:right="900" w:bottom="1000" w:left="900" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  zip.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="el-GR"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>');
+  zip.file('word/document.xml', doc);
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+function download(blob, name){
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/* ---------- συμβάντα ---------- */
+$('date').addEventListener('change', e => { const d = parseYmd(e.target.value); if (!d) return; A.date = d; A.over = {}; const h = hist().find(x => x.date === ymd(d)); if (h) restoreDay(h); else { fillAbsentSelect(); render(); } });
+$('addAbs').addEventListener('change', e => { const i = +e.target.value; if (e.target.value === '' || A.absent.includes(i)) return; A.absent.push(i); fillAbsentSelect(); render(); });
+$('absList').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; const i = +b.dataset.rm; A.absent = A.absent.filter(x => x !== i); Object.keys(A.over).forEach(k => { if (k.startsWith(i + ':')) delete A.over[k]; }); fillAbsentSelect(); render(); });
+$('plan').addEventListener('change', e => { const s = e.target.closest('select[data-k]'); if (!s) return; A.over[s.dataset.k] = s.value; render(); });
+$('redo').addEventListener('click', () => { A.over = {}; A.seed++; render(); toast('Νέα πρόταση'); });
+$('saveDay').addEventListener('click', () => saveDay(false));
+$('word').addEventListener('click', async () => {
+  if (!A.rows.length) return;
+  const b = $('word'); b.disabled = true;
+  try { const blob = await buildDocx(); const d = A.date, p = n => String(n).padStart(2, '0'); download(blob, `Αναπληρώσεις_${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()}.docx`); saveDay(true); toast('Κατέβηκε το Word · η ημέρα αποθηκεύτηκε'); }
+  catch(e) { toast('Σφάλμα: ' + (e.message || e)); }
+  finally { b.disabled = false; }
+});
+$('days').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; const h = hist().find(x => x.date === b.dataset.day); if (h) restoreDay(h); });
+function restoreDay(h){
+  const m = A.model; A.date = parseYmd(h.date);
+  A.absent = (h.absent || []).map(n => m.teachers.findIndex(t => key(t.name) === key(n))).filter(i => i >= 0);
+  A.over = {};
+  needs().forEach(r => { const row = h.rows.find(x => x.period === r.period && key(x.absent) === key(m.teachers[r.ai].name)); if (row) A.over[r.k] = row.cover; });
+  fillAbsentSelect(); render();
+}
+$('file').addEventListener('change', async e => { const f = e.target.files[0]; if (f) await loadSource({ buf: await f.arrayBuffer(), name: f.name }); e.target.value = ''; });
+$('exportHist').addEventListener('click', () => { download(new Blob([JSON.stringify({ type:'anapl-history-v1', at:new Date().toISOString(), days:hist() }, null, 2)], { type:'application/json' }), 'Αναπληρώσεις_ιστορικό_' + ymd(new Date()) + '.json'); });
+$('importHist').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text()); if (!d || d.type !== 'anapl-history-v1' || !Array.isArray(d.days)) throw new Error('Δεν είναι αρχείο ιστορικού αναπληρώσεων.');
+    const by = {}; hist().forEach(x => by[x.date] = x); d.days.forEach(x => { if (x && x.date && Array.isArray(x.rows)) by[x.date] = x; });
+    ls.set(P.hist, Object.values(by).sort((a, b) => a.date < b.date ? -1 : 1)); render(); toast('Επαναφέρθηκε το ιστορικό');
+  } catch(err) { toast(err.message || String(err)); }
+});
+window.addEventListener('storage', e => { if (e.key === P.plan || e.key === P.tt) loadSource(); if (e.key === P.efs) { readDuty(); render(); } });
+
+(async () => {
+  const dr = ls.get(P.draft);
+  await loadSource();
+  if (A.model && dr && dr.date) {
+    const d = parseYmd(dr.date);
+    if (d && d >= parseYmd(ymd(new Date()))) {
+      A.date = d; A.seed = dr.seed || 1; A.over = dr.over || {};
+      A.absent = (dr.absent || []).map(n => A.model.teachers.findIndex(t => key(t.name) === key(n))).filter(i => i >= 0);
+      fillAbsentSelect(); render();
+    }
+  }
+})();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
