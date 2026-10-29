@@ -1,5 +1,5 @@
 // Offline για την εφαρμογή Αναπληρώσεων. Άλλαξε το VERSION σε κάθε έκδοση.
-const VERSION = 'anapl-v1';
+const VERSION = 'anapl-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', '../gr/exceljs.min.js'];
 const LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'];
 self.addEventListener('install', e => {
