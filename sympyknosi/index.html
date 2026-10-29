@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Συμπύκνωση</title>
+<meta name="description" content="Συμπύκνωση του προγράμματος της ημέρας όταν λείπουν εκπαιδευτικοί: τα μαθήματα ανεβαίνουν προς την 1η ώρα ώστε να μη μένουν κενά στα τμήματα.">
+<meta name="theme-color" content="#00796B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Συμπύκνωση">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>try{var t=localStorage.getItem('suite-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<style>
+:root{
+  --bg:#EEF5F4; --panel:#FFFFFF; --ink:#14262A; --muted:#55696D; --line:#D3E2E0; --soft:#E4EFED;
+  --acc:#00796B; --acc-ink:#FFFFFF; --acc-soft:#D9F0EC;
+  --mv:#00796B; --mv-soft:#D4EFEA; --gr:#C62828; --gr-soft:#FDEAEA; --ok:#2E7D4F; --ok-soft:#E3F2E8;
+  --warn:#A85D00; --warn-soft:#FFF1DC; --bad:#B3261E; --bad-soft:#FBE3E1; --off:#B9C3C5;
+  --shadow:0 1px 2px rgba(20,38,42,.05),0 6px 18px rgba(20,38,42,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1A1B; --panel:#152426; --ink:#E3EFEE; --muted:#97AEAE; --line:#28403F; --soft:#1C3133;
+  --acc:#4DB6AC; --acc-ink:#0B1617; --acc-soft:#1D3B39;
+  --mv:#6FD3C6; --mv-soft:#173C38; --gr:#EF5350; --gr-soft:#3A1F22; --ok:#5CC28A; --ok-soft:#183025;
+  --warn:#F0A64A; --warn-soft:#33261A; --bad:#FF8A80; --bad-soft:#3A1C1C; --off:#3E4D50;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1A1B; --panel:#152426; --ink:#E3EFEE; --muted:#97AEAE; --line:#28403F; --soft:#1C3133;
+  --acc:#4DB6AC; --acc-ink:#0B1617; --acc-soft:#1D3B39;
+  --mv:#6FD3C6; --mv-soft:#173C38; --gr:#EF5350; --gr-soft:#3A1F22; --ok:#5CC28A; --ok-soft:#183025;
+  --warn:#F0A64A; --warn-soft:#33261A; --bad:#FF8A80; --bad-soft:#3A1C1C; --off:#3E4D50;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45;
+  padding:20px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header h1{margin:0;font-size:clamp(24px,4vw,32px);line-height:1.1;letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--muted);max-width:80ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px 20px;min-width:0}
+.card h2{margin:0 0 4px;font-size:17px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink);min-height:40px;max-width:100%}
+.btn{font:inherit;font-weight:650;font-size:14px;display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.file-btn{position:relative;overflow:hidden}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.empty{text-align:center;padding:34px 20px}
+.empty h2{font-size:19px;margin:0 0 6px}
+.src{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.src b{color:var(--ink)}
+.src .btn{min-height:32px;padding:5px 10px;font-size:13px}
+/* απόντες */
+.abs{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.abs li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 10px;border:1px solid var(--line);border-radius:11px;background:var(--soft)}
+.abs .nm{font-weight:700;flex:1 1 180px;min-width:0;overflow-wrap:anywhere}
+.abs .nm small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.dsel{display:flex;gap:4px;flex-wrap:wrap}
+.dsel button{font:inherit;font-size:13px;font-weight:650;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:5px 8px;min-width:52px;cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.dsel button small{font-weight:500;font-size:10.5px}
+.dsel button[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+:root[data-theme="dark"] .dsel button[aria-pressed="true"]{color:#1a0d0c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dsel button[aria-pressed="true"]{color:#1a0d0c}}
+.dsel button:disabled{opacity:.35;cursor:default}
+.rm{border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
+.rm:hover{color:var(--bad)}
+/* κανόνες */
+details.rules>summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none;display:flex;gap:8px;align-items:center}
+details.rules>summary::-webkit-details-marker{display:none}
+details.rules>summary::before{content:'▸';transition:transform .15s}
+details.rules[open]>summary::before{transform:rotate(90deg)}
+details.rules>summary span{font-weight:500;color:var(--muted);font-size:13px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px 20px;margin-top:12px}
+.rgrid label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:14px}
+.rgrid input{margin-top:3px;accent-color:var(--acc);width:16px;height:16px;flex:none}
+.rgrid small{display:block;color:var(--muted);font-size:12.5px}
+/* αποτέλεσμα */
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:3px;background:var(--soft);border-radius:11px;width:fit-content;max-width:100%}
+.tabs button{font:inherit;font-weight:650;font-size:14px;border:0;background:transparent;color:var(--muted);border-radius:8px;padding:7px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--acc);color:var(--acc-ink)}
+.tabs button small{font-weight:600;opacity:.85}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 2px}
+.chip{display:inline-flex;align-items:baseline;gap:6px;padding:5px 11px;border-radius:99px;background:var(--soft);font-size:13.5px;font-variant-numeric:tabular-nums}
+.chip b{font-size:16px}
+.chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.good{background:var(--ok-soft);color:var(--ok)} .chip.mv{background:var(--mv-soft);color:var(--mv)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:920px){.grid2{grid-template-columns:1fr}}
+.vhead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{font:inherit;font-size:13.5px;font-weight:600;border:0;background:var(--panel);color:var(--muted);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:0 0 10px}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:4px;border:1px solid var(--line)}
+.scroll{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:72vh}
+table.g{border-collapse:separate;border-spacing:0;font-size:12.5px;font-variant-numeric:tabular-nums;width:100%}
+table.g th,table.g td{padding:0;text-align:center;white-space:nowrap}
+table.g thead th{position:sticky;top:0;z-index:2;background:var(--panel);color:var(--muted);font-weight:700;height:30px;border-bottom:1px solid var(--line);font-size:12px}
+table.g th.nm,table.g td.nm{position:sticky;left:0;z-index:1;background:var(--panel);text-align:left;padding:0 10px;border-right:1px solid var(--line);font-weight:700;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+table.g thead th.nm{z-index:3}
+table.g td.c{height:38px;min-width:62px;border-bottom:1px solid var(--line);border-left:1px solid var(--line);position:relative;line-height:1.1;padding:2px 3px}
+table.g td.c small{display:block;font-size:10.5px;font-weight:600;opacity:.85}
+table.g td.end{color:var(--muted);font-size:11px}
+td.L{background:var(--panel)}
+td.M{background:var(--mv-soft);color:var(--mv);font-weight:700}
+td.H{background:var(--bad-soft);color:var(--bad);font-weight:800}
+td.X{background:repeating-linear-gradient(135deg,transparent 0 5px,var(--soft) 5px 6px);color:var(--muted)}
+td.A{background:var(--off);color:var(--ink);opacity:.75}
+td.V{color:var(--muted)}
+td.Gr{color:var(--gr);font-weight:700}
+td.Bz{color:var(--muted);font-size:11px}
+td.pick{cursor:pointer}
+td.pick:hover{box-shadow:inset 0 0 0 2px var(--acc)}
+td.pin::after{content:'';position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--ink);opacity:.6}
+tr.absrow td.nm{color:var(--bad)}
+tr.chg td.nm{color:var(--mv)}
+.note{color:var(--muted);font-size:12.5px;margin:10px 0 0}
+.changes h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 6px}
+.changes h3:first-child{margin-top:4px}
+.changes ul{list-style:none;margin:0;padding:0}
+.changes li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.changes li:last-child{border-bottom:0}
+.changes li b{font-weight:700}
+.arrow{font-weight:800;color:var(--mv);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;margin-left:4px;white-space:nowrap;vertical-align:1px}
+.tag.gr{background:var(--gr-soft);color:var(--gr)} .tag.wn{background:var(--warn-soft);color:var(--warn)} .tag.bd{background:var(--bad-soft);color:var(--bad)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.warnbox{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:9px 12px;font-size:13.5px;margin-top:12px}
+.warnbox b{color:inherit}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:9px;font-weight:600;max-width:calc(100% - 32px);z-index:50}
+.drop.over{outline:2px dashed var(--acc);outline-offset:6px;border-radius:14px}
+@media (max-width:640px){
+  .card{padding:14px}
+  .dsel button{min-width:46px;padding:5px 6px}
+  table.g td.c{min-width:54px}
+}
+@media print{
+  .sbar,.no-print{display:none!important}
+  body{background:#fff;padding:0;font-size:12px}
+  .card{box-shadow:none;border:0;padding:0}
+  .grid2{grid-template-columns:1fr}
+  .scroll{max-height:none;overflow:visible;border:0}
+  table.g td.c,table.g th{border:1px solid #999!important}
+  table.g thead th,table.g th.nm,table.g td.nm{position:static}
+}
+</style>
+</head>
+<body>
+<!-- ===== Μπάρα σουίτας: αρχική + εναλλαγή Εφημερίες ⇄ ΓΡ ⇄ Αναπληρώσεις ⇄ Συμπύκνωση (ίδιο κομμάτι σε όλες τις εφαρμογές) ===== -->
+<nav class="sbar" id="suiteBar" data-app="sy" aria-label="Εφαρμογές">
+  <a class="sbar-home" href="../" title="Όλες οι εφαρμογές">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>
+    <span class="sbar-hl">Εργαλεία</span>
+  </a>
+  <div class="sbar-right">
+  <button type="button" class="sbar-upd" id="sbarUpd" hidden title="Υπάρχει νέα έκδοση της εφαρμογής">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    <span>Νέα έκδοση · Ανανέωση</span>
+  </button>
+  <button type="button" class="sbar-theme" id="sbarTheme" aria-label="Θέμα"></button>
+  <div class="sbar-seg" role="group" aria-label="Εναλλαγή εφαρμογής">
+    <a class="sbar-opt ef" href="../efimeries/" data-to="ef">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 3v3.5M16 3v3.5"/></svg>
+      <span class="l">Εφημερίες</span><span class="s">Εφημ.</span>
+    </a>
+    <a class="sbar-opt gr" href="../gr/" data-to="gr">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M9 9v11.5M15 9v11.5"/></svg>
+      <span>ΓΡ</span>
+    </a>
+    <a class="sbar-opt an" href="../anaplirwseis/" data-to="an">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5h5M18.5 5v5"/></svg>
+      <span class="l">Αναπληρώσεις</span><span class="s">Αναπλ.</span>
+    </a>
+    <a class="sbar-opt sy" href="../sympyknosi/" data-to="sy">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="13" height="17" rx="2.5"/><path d="M2.5 9.2h13M2.5 14.8h13M9 3.5v17"/><path d="M20 20.5V6.5M17 9.5l3-3 3 3"/></svg>
+      <span class="l">Συμπύκνωση</span><span class="s">Συμπ.</span>
+    </a>
+  </div>
+  </div>
+</nav>
+<style>
+  .sbar{
+    --sb-bg:#FFFFFF; --sb-line:rgba(20,30,50,.13); --sb-ink:#1D2433; --sb-muted:#5A6577; --sb-track:rgba(20,30,50,.06);
+    --sb-ef:#2F6B3F; --sb-gr:#C62828; --sb-an:#3949AB; --sb-sy:#00796B; --sb-on-ink:#FFFFFF;
+    box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    max-width:var(--sb-max,1000px); margin:0 auto 18px; padding:6px;
+    background:var(--sb-bg); border:1px solid var(--sb-line); border-radius:14px;
+    box-shadow:0 1px 2px rgba(20,30,50,.05);
+    font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; color:var(--sb-ink);
+  }
+  .sbar[data-app="gr"]{--sb-max:1500px;} .sbar[data-app="an"]{--sb-max:1100px;} .sbar[data-app="sy"]{--sb-max:1240px;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .sbar{
+      --sb-bg:rgba(255,255,255,.05); --sb-line:rgba(255,255,255,.14); --sb-ink:#E8EDF5; --sb-muted:#A3AEC0; --sb-track:rgba(255,255,255,.06);
+      --sb-ef:#7BD08F; --sb-gr:#EF5350; --sb-an:#9FA8FF; --sb-sy:#4DB6AC; --sb-on-ink:#0D1410;
+    }
+  }
+  :root[data-theme="dark"] .sbar{
+    --sb-bg:rgba(255,255,255,.05); --sb-line:rgba(255,255,255,.14); --sb-ink:#E8EDF5; --sb-muted:#A3AEC0; --sb-track:rgba(255,255,255,.06);
+    --sb-ef:#7BD08F; --sb-gr:#EF5350; --sb-an:#9FA8FF; --sb-sy:#4DB6AC; --sb-on-ink:#0D1410;
+  }
+  .sbar *{box-sizing:border-box;}
+  .sbar a{color:inherit; text-decoration:none; -webkit-tap-highlight-color:transparent;}
+  .sbar-home{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; color:var(--sb-muted) !important;}
+  .sbar-home:hover{background:var(--sb-track); color:var(--sb-ink) !important;}
+  .sbar-right{display:flex; align-items:center; gap:6px; min-width:0;}
+  .sbar button{font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .sbar-theme{display:inline-grid; place-items:center; width:36px; height:36px; padding:0; border:0; border-radius:10px; background:transparent; color:var(--sb-muted) !important;}
+  .sbar-theme:hover{background:var(--sb-track); color:var(--sb-ink) !important;}
+  .sbar-upd{display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border:0; border-radius:10px; background:#F2B233; color:#2A1D00 !important; font-weight:700 !important;}
+  .sbar-upd[hidden]{display:none;}
+  .sbar button:focus-visible{outline:2px solid var(--sb-ink); outline-offset:2px;}
+  @media (max-width:560px){ .sbar-upd span{display:none;} .sbar-upd{padding:9px;} }
+  .sbar-seg{display:inline-flex; gap:4px; padding:3px; background:var(--sb-track); border-radius:11px;}
+  .sbar-opt{display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:8px; color:var(--sb-muted) !important; transition:background .15s, color .15s;}
+  .sbar-opt:hover{color:var(--sb-ink) !important; background:var(--sb-bg);}
+  .sbar-opt[aria-current="page"]{color:var(--sb-on-ink) !important; cursor:default;}
+  .sbar-opt.ef[aria-current="page"]{background:var(--sb-ef);}
+  .sbar-opt.gr[aria-current="page"]{background:var(--sb-gr);}
+  .sbar-opt.an[aria-current="page"]{background:var(--sb-an);}
+  .sbar-opt.sy[aria-current="page"]{background:var(--sb-sy);}
+  .sbar-opt .s{display:none;}
+  @media (max-width:900px){ .sbar-opt{padding:7px 10px;} }
+  @media (max-width:760px){ .sbar-opt .l{display:none;} .sbar-opt .s{display:inline;} .sbar-opt{padding:7px 9px; gap:5px;} .sbar-opt svg{display:none;} }
+  .sbar a:focus-visible{outline:2px solid var(--sb-ink); outline-offset:2px;}
+  @media (max-width:520px){ .sbar-hl{display:none;} .sbar-home{padding:8px;} .sbar-opt{padding:7px 7px;} }
+  @media (max-width:380px){ .sbar-opt{padding:7px 5px; font-size:13px;} .sbar-theme{width:30px;} .sbar-home{padding:6px;} }
+  @media (prefers-reduced-motion: reduce){ .sbar-opt{transition:none;} }
+  @media print{ .sbar{display:none !important;} }
+</style>
+<script>
+(function () {
+  var bar = document.getElementById('suiteBar');
+  if (!bar) return;
+  var app = bar.getAttribute('data-app');
+  var cur = bar.querySelector('.sbar-opt[data-to="' + app + '"]');
+  if (cur) {
+    cur.setAttribute('aria-current', 'page');
+    cur.addEventListener('click', function (e) { e.preventDefault(); });
+  }
+  try { localStorage.setItem('suite-last-app', app); } catch (e) { /* αγνόησε */ }
+  var done = false;
+  function prefetch() {
+    if (done) return; done = true;
+    Array.prototype.forEach.call(bar.querySelectorAll('.sbar-opt:not([aria-current])'), function (other) {
+      var l = document.createElement('link'); l.rel = 'prefetch'; l.href = other.href; document.head.appendChild(l);
+    });
+  }
+  bar.addEventListener('pointerenter', prefetch, { once: true });
+  bar.addEventListener('touchstart', prefetch, { once: true, passive: true });
+  bar.addEventListener('focusin', prefetch, { once: true });
+  var TK = 'suite-theme', root = document.documentElement, tb = document.getElementById('sbarTheme');
+  var ICONS = {
+    auto: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/></svg>',
+    light: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>',
+    dark: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>'
+  };
+  var NAMES = { auto: 'αυτόματο (όπως η συσκευή)', light: 'φωτεινό', dark: 'σκούρο' };
+  function getTheme() { try { var v = localStorage.getItem(TK); return v === 'light' || v === 'dark' ? v : 'auto'; } catch (e) { return 'auto'; } }
+  function applyTheme(v) {
+    if (v === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', v);
+    if (tb) { tb.innerHTML = ICONS[v]; tb.title = 'Θέμα: ' + NAMES[v] + ' · πάτα για αλλαγή'; }
+  }
+  applyTheme(getTheme());
+  if (tb) tb.addEventListener('click', function () {
+    var next = { auto: 'light', light: 'dark', dark: 'auto' }[getTheme()];
+    try { localStorage.setItem(TK, next); } catch (e) { /* αγνόησε */ }
+    applyTheme(next);
+  });
+  window.addEventListener('storage', function (e) { if (e.key === TK) applyTheme(getTheme()); });
+  var ub = document.getElementById('sbarUpd');
+  if ('serviceWorker' in navigator && ub) {
+    var oldUrl = navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      var c = navigator.serviceWorker.controller;
+      if (oldUrl && c && c.scriptURL === oldUrl) ub.hidden = false;
+      oldUrl = oldUrl || (c && c.scriptURL);
+    });
+    ub.addEventListener('click', function () { location.reload(); });
+    var check = function () { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {}); };
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+    setInterval(check, 30 * 60 * 1000);
+  }
+})();
+</script>
+<!-- ===== τέλος μπάρας σουίτας ===== -->
+<div class="wrap drop" id="drop">
+  <header>
+    <h1>Συμπύκνωση προγράμματος</h1>
+    <p>Δήλωσε ποιοι λείπουν και ποιες μέρες. Για εκείνη τη μέρα μόνο, τα μαθήματα ανεβαίνουν προς την 1η ώρα ώστε τα τμήματα να μη μένουν με κενά: πρώτα μετακινείται το μάθημα της τελευταίας ώρας, και μόνο αν ο καθηγητής του είναι ελεύθερος τη νέα ώρα.</p>
+  </header>
+
+  <div class="card empty" id="empty" hidden>
+    <h2>Δεν βρέθηκε ωρολόγιο πρόγραμμα</h2>
+    <p class="sub">Αν το έχεις ανεβάσει στις Εφημερίες ή στο ΓΡ, το παίρνει αυτόματα από εκεί. Αλλιώς διάλεξε ή σύρε εδώ το αρχείο .xlsx.</p>
+    <label class="btn primary file-btn">Επιλογή αρχείου .xlsx<input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+  </div>
+
+  <div id="main" hidden>
+    <div class="card">
+      <div class="src" id="src"></div>
+      <div class="row" style="margin-top:14px">
+        <label class="f" style="flex:1;min-width:240px">Απών/ούσα<select id="addAbs"><option value="">+ Προσθήκη εκπαιδευτικού…</option></select></label>
+        <button class="btn ghost no-print" id="clearAbs" type="button" hidden>Καθαρισμός</button>
+      </div>
+      <ul class="abs" id="absList"></ul>
+      <p class="sub" id="absNote" style="margin:10px 0 0">Πρόσθεσε όσους λείπουν και πάτα τις μέρες της απουσίας τους. Ο αριθμός κάτω από κάθε μέρα είναι οι ώρες μαθήματος εκείνη τη μέρα.</p>
+
+      <details class="rules no-print" id="rules" style="margin-top:16px">
+        <summary>Κανόνες <span id="rulesSum"></span></summary>
+        <div class="rgrid">
+          <label><input type="checkbox" id="o-gr" checked><span>Το μάθημα μπορεί να ανέβει σε ώρα που ο καθηγητής έχει ΓΡ<small>Το ΓΡ εκείνης της ώρας χάνεται· σημειώνεται στις αλλαγές.</small></span></label>
+          <label><input type="checkbox" id="o-early"><span>Όχι νωρίτερα από την πρώτη ώρα του καθηγητή<small>Ο καθηγητής δεν χρειάζεται να έρθει πιο νωρίς από ό,τι είχε προγραμματίσει.</small></span></label>
+          <label><input type="checkbox" id="o-double"><span>Τα δίωρα μένουν στη θέση τους<small>Μαθήματα σε συγχωνευμένα κελιά (π.χ. εργαστήρια) δεν μετακινούνται.</small></span></label>
+        </div>
+      </details>
+    </div>
+
+    <div id="result" hidden style="margin-top:16px">
+      <div class="tabs no-print" id="tabs" role="tablist" aria-label="Μέρες"></div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="card">
+          <div class="vhead">
+            <h2 id="dayTitle" style="margin:0">—</h2>
+            <div class="seg no-print" role="group" aria-label="Προβολή"><button type="button" data-v="cls" aria-pressed="true">Τμήματα</button><button type="button" data-v="tch" aria-pressed="false">Καθηγητές</button></div>
+          </div>
+          <div class="chips" id="chips"></div>
+          <div class="legend" id="legend" style="margin-top:10px"></div>
+          <div class="scroll"><table class="g" id="grid"></table></div>
+          <p class="note no-print" id="gridNote"></p>
+          <div id="unknown"></div>
+        </div>
+        <div class="card changes">
+          <h2>Αλλαγές ημέρας</h2>
+          <div id="changes"></div>
+          <div class="actions no-print">
+            <button class="btn primary" id="xlsx" type="button">Λήψη Excel</button>
+            <button class="btn" id="copy" type="button">Αντιγραφή</button>
+            <button class="btn" id="print" type="button">Εκτύπωση</button>
+          </div>
+          <p class="note no-print" id="xlsxNote"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="../gr/exceljs.min.js"></script>
+<script>if (!window.ExcelJS) document.write('<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"><\/script>');</script>
+<script id="engine">
+// ===== Ανάγνωση προγράμματος + αλγόριθμος συμπύκνωσης (το ίδιο κομμάτι τρέχει και στο τεστ σε Node) =====
+const DAYS = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή'];
+const GR = 'ΓΡ';
+const PAR = 'ΓΟΝ';
+
+function colNum(s) { let n = 0; for (const ch of s) n = n * 26 + ch.charCodeAt(0) - 64; return n; }
+function parseAddr(a) { const m = /^([A-Z]+)(\d+)$/.exec(a.replace(/\$/g, '')); return { c: colNum(m[1]), r: +m[2] }; }
+function txt(v) {
+  if (v == null) return '';
+  if (typeof v === 'object') {
+    if (v.richText) return v.richText.map(x => x.text).join('').trim();
+    if (v.formula || v.sharedFormula) return '';
+    if (v.text) return String(v.text).trim();
+    if ('result' in v) return v.result == null ? '' : String(v.result).trim();
+  }
+  return String(v).trim();
+}
+const norm = s => s.replace(/\s+/g, ' ').trim();
+function isGrey(fill) {
+  if (!fill || fill.type !== 'pattern' || !fill.pattern || fill.pattern === 'none') return false;
+  const c = fill.fgColor || {};
+  if (c.theme != null) {
+    const tint = c.tint || 0;
+    if (c.theme === 0 || c.theme === 2) return tint < -0.04;
+    if (c.theme === 1 || c.theme === 3) return tint > 0.3;
+    return false;
+  }
+  if (c.argb) {
+    const h = c.argb.slice(-6), r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return Math.max(r, g, b) - Math.min(r, g, b) <= 18 && r < 0xF2 && r > 0x50;
+  }
+  if (c.indexed != null) return [22, 23, 55].includes(c.indexed);
+  return false;
+}
+// Ίδια ανάγνωση με το ΓΡ και τις Αναπληρώσεις· κρατά επιπλέον ποια μαθήματα είναι δίωρα (οριζόντια συγχώνευση).
+function parseSheet(ws) {
+  let dayRow = 0;
+  for (let r = 1; r <= Math.min(ws.rowCount, 30) && !dayRow; r++)
+    ws.getRow(r).eachCell({ includeEmpty: false }, c => { if (txt(c.value) === DAYS[0]) dayRow = r; });
+  if (!dayRow) throw new Error('Δεν βρέθηκε η γραμμή με τις ημέρες (Δευτέρα … Παρασκευή).');
+  const perRow = dayRow + 1;
+  const dayStarts = [];
+  ws.getRow(dayRow).eachCell({ includeEmpty: false }, c => { const i = DAYS.indexOf(txt(c.value)); if (i >= 0) dayStarts.push({ day: i, col: c.col }); });
+  dayStarts.sort((a, b) => a.col - b.col);
+  const slots = [];
+  dayStarts.forEach((d, k) => {
+    const end = k + 1 < dayStarts.length ? dayStarts[k + 1].col - 1 : d.col + 9;
+    for (let c = d.col; c <= end; c++) {
+      const p = parseInt(txt(ws.getCell(perRow, c).value), 10);
+      if (p > 0) slots.push({ col: c, day: d.day, period: p });
+      else if (k + 1 === dayStarts.length) break;
+    }
+  });
+  if (!slots.length) throw new Error('Δεν βρέθηκαν οι ώρες (1, 2, 3 …) κάτω από τις ημέρες.');
+  const merges = (ws.model.merges || []).map(m => { const [a, b] = m.split(':'); const A = parseAddr(a), B = parseAddr(b || a); return { r1: A.r, c1: A.c, r2: B.r, c2: B.c }; });
+  const mergeAt = (r, c) => merges.find(m => r >= m.r1 && r <= m.r2 && c >= m.c1 && c <= m.c2);
+  const teachers = [];
+  for (let r = perRow + 1; r <= ws.rowCount; r++) {
+    const name = norm(txt(ws.getCell(r, 1).value));
+    if (!name) break;
+    const spec = norm(txt(ws.getCell(r, 2).value));
+    const cells = slots.map(s => {
+      const m = mergeAt(r, s.col);
+      const v = m ? txt(ws.getCell(m.r1, m.c1).value) : txt(ws.getCell(r, s.col).value);
+      const cell = m ? ws.getCell(m.r1, m.c1) : ws.getCell(r, s.col);
+      return { v, merged: !!m, wide: m ? (m.c2 - m.c1 + 1) : 1, span: m && m.c2 > m.c1 ? `${m.r1}:${m.c1}` : '', grey: isGrey(cell.fill) };
+    });
+    const staff = cells.some(c => c.wide >= 8);
+    teachers.push({
+      row: r, name, spec, staff,
+      grey: cells.map(c => c.grey),
+      span: cells.map(c => c.span),
+      cells: cells.map(c => c.v === GR && !c.merged ? 'G' : (c.v === PAR && !c.merged) ? 'P' : (c.v ? 'L' : 'F')),
+      labels: cells.map(c => (c.v === GR || c.v === PAR ? '' : c.v)),
+    });
+  }
+  if (!teachers.length) throw new Error('Δεν βρέθηκαν εκπαιδευτικοί κάτω από τις ώρες.');
+  return { slots, teachers, title: [txt(ws.getCell(1, 1).value), txt(ws.getCell(2, 1).value)].filter(Boolean).join(' · ') };
+}
+
+// Τμήματα που αναφέρει ένα κελί: «Β2» → [Β2], «Γ1-Γ2» / «Γ1-2» / «Α1/Α3» → όλα. Λατινικά A/B γίνονται ελληνικά.
+const LAT = { A:'Α', B:'Β', E:'Ε', Z:'Ζ', H:'Η', I:'Ι', K:'Κ', M:'Μ', N:'Ν', O:'Ο', P:'Ρ', T:'Τ', Y:'Υ', X:'Χ' };
+function capsGr(s) { return String(s == null ? '' : s).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').normalize('NFC').replace(/[ABEZHIKMNOPTYX]/g, ch => LAT[ch]); }
+function classesOf(label) {
+  const s = capsGr(label), out = [];
+  const re = /(?<![Α-ΩA-Z])([ΑΒΓ])\s*(\d{1,2})(?!\d)((?:\s*[-‐–,\/+&]\s*(?:[ΑΒΓ]\s*)?\d{1,2}(?!\d))*)/g;
+  let m;
+  while ((m = re.exec(s))) {
+    out.push(m[1] + m[2]);
+    if (m[3]) { const r2 = /(?:([ΑΒΓ])\s*)?(\d{1,2})/g; let k; while ((k = r2.exec(m[3]))) out.push((k[1] || m[1]) + k[2]); }
+  }
+  return [...new Set(out)];
+}
+const clsSort = (a, b) => a.localeCompare(b, 'el', { numeric: true });
+
+function rand(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+
+/*
+ * Συμπύκνωση μιας ημέρας.
+ *   ctx.absent : Set με δείκτες απόντων εκπαιδευτικών
+ *   ctx.gr     : πίνακας (ανά εκπαιδευτικό) με Set θέσεων ΓΡ — αν λείπει, από το αρχείο
+ *   ctx.opts   : { useGR, notEarlier, keepDouble }
+ *   ctx.pins   : Set με id μαθημάτων που μένουν όπου είναι
+ * Κανόνες: ένα μάθημα ανεβαίνει μόνο σε πιο νωρίς ώρα, μόνο αν όλοι οι καθηγητές του είναι ελεύθεροι τότε
+ * και όλα τα τμήματά του άδεια. Για κάθε κενό (από την 1η ώρα προς τα κάτω) προτιμά το μάθημα της πιο
+ * αργής ώρας. Δοκιμάζει πολλές σειρές και κρατά αυτή με τα λιγότερα κενά, τα νωρίτερα σχολάσματα και τις
+ * λιγότερες μετακινήσεις.
+ */
+function compactDay(model, d, ctx) {
+  const opts = ctx.opts || {}, pins = ctx.pins || new Set(), absent = ctx.absent || new Set();
+  const S = model.slots.map((s, si) => ({ ...s, si })).filter(s => s.day === d);
+  if (!S.length) return null;
+  const P = Math.max(...S.map(s => s.period));
+  const base = {};            // base[ti][p]: 0 ελεύθερος, 1 ΓΡ, 2 δεσμευμένος (ΓΟΝ, γκρι, άλλη υποχρέωση)
+  const lessons = [], removed = [], unknown = [], grLost = [];
+  model.teachers.forEach((t, ti) => {
+    if (t.staff) return;
+    const row = new Array(P + 1).fill(0);
+    S.forEach(s => {
+      const si = s.si, p = s.period, c = t.cells[si];
+      const isGr = ctx.gr && ctx.gr[ti] ? ctx.gr[ti].has(si) : c === 'G';
+      if (t.grey[si]) row[p] = 2;
+      if (c === 'L') {
+        const label = t.labels[si], cls = classesOf(label);
+        if (!cls.length) { row[p] = 2; unknown.push({ ti, p, label }); return; }
+        const e = { id: `${ti}:${si}`, ti, si, p0: p, p, label, cls, span: t.span[si] || '' };
+        (absent.has(ti) ? removed : lessons).push(e);
+      } else if (c === 'P') row[p] = 2;
+      else if (isGr && row[p] === 0) row[p] = 1;
+    });
+    base[ti] = row;
+  });
+  const start = {}, origLast = {};
+  lessons.concat(removed).forEach(e => e.cls.forEach(c => {
+    start[c] = Math.min(start[c] || 99, e.p0); origLast[c] = Math.max(origLast[c] || 0, e.p0);
+  }));
+  const classes = Object.keys(start).sort(clsSort);
+  const firstT = {};
+  lessons.forEach(e => { firstT[e.ti] = Math.min(firstT[e.ti] || 99, e.p0); });
+
+  function attempt(seed, natural) {
+    const rnd = rand(seed);
+    const st = lessons.map(e => ({ ...e }));
+    const tAt = {}, cAt = {};
+    const add = e => { (tAt[e.ti] = tAt[e.ti] || new Array(P + 2).fill(0))[e.p]++; e.cls.forEach(c => ((cAt[c] = cAt[c] || [])[e.p] = cAt[c][e.p] || []).push(e)); };
+    const del = e => { tAt[e.ti][e.p]--; e.cls.forEach(c => { const a = cAt[c][e.p]; a.splice(a.indexOf(e), 1); }); };
+    st.forEach(add);
+    const at = (c, p) => (cAt[c] && cAt[c][p]) || [];
+    const lastOf = c => { for (let p = P; p >= 1; p--) if (at(c, p).length) return p; return 0; };
+    const blockOf = e => {   // όλα τα μαθήματα της ίδιας ώρας που μοιράζονται τμήμα (συνδιδασκαλίες, ενωμένα τμήματα)
+      const seen = new Set([e]), q = [e];
+      while (q.length) { const x = q.pop(); x.cls.forEach(c => at(c, x.p).forEach(y => { if (!seen.has(y)) { seen.add(y); q.push(y); } })); }
+      return [...seen];
+    };
+    const tie = {}; model.teachers.forEach((t, ti) => tie[ti] = natural ? ti / 1e4 : rnd());
+    const order = natural ? classes.slice() : classes.slice().sort(() => rnd() - 0.5);
+    const moves = [];
+    for (let p = 1; p < P; p++) {
+      for (const c of order) {
+        if (p < start[c] || at(c, p).length) continue;
+        const last = lastOf(c);
+        if (last <= p) continue;
+        const cands = [], seenB = new Set();
+        for (let q = last; q > p; q--) {
+          for (const e of at(c, q)) {
+            const blk = blockOf(e), k = blk.map(x => x.id).sort().join(',');
+            if (seenB.has(k)) continue; seenB.add(k);
+            if (blk.some(x => pins.has(x.id) || (opts.keepDouble && x.span))) continue;
+            const bc = [...new Set(blk.flatMap(x => x.cls))], bt = [...new Set(blk.map(x => x.ti))];
+            if (bc.some(cl => at(cl, p).length)) continue;
+            if (bt.some(ti => (tAt[ti] && tAt[ti][p]) || base[ti][p] === 2 || (base[ti][p] === 1 && !opts.useGR) || (opts.notEarlier && p < firstT[ti]))) continue;
+            const early = bt.filter(ti => p < firstT[ti]).length, grc = bt.filter(ti => base[ti][p] === 1).length;
+            cands.push({ blk, q, early, grc, r: Math.min(...bt.map(ti => tie[ti])) });
+          }
+        }
+        if (!cands.length) continue;
+        cands.sort((a, b) => b.q - a.q || a.early - b.early || a.grc - b.grc || a.r - b.r);
+        const best = cands[0];
+        best.blk.forEach(x => { del(x); x.p = p; add(x); });
+        moves.push(best);
+      }
+    }
+    // αποτίμηση
+    let holes = 0, endSum = 0;
+    const holeList = [];
+    classes.forEach(c => {
+      const L = lastOf(c); endSum += L;
+      for (let p = start[c]; p < L; p++) if (!at(c, p).length) { holes++; holeList.push({ c, p }); }
+    });
+    const moved = st.filter(e => e.p !== e.p0);
+    const early = moved.filter(e => e.p < firstT[e.ti]).length;
+    const grUse = moved.filter(e => base[e.ti][e.p] === 1).length;
+    return { st, holes, holeList, endSum, nMoved: moved.length, early, grUse, lastOf, at };
+  }
+  const tries = ctx.attempts || 60;
+  let best = null;
+  for (let a = 0; a < tries; a++) {
+    const r = attempt(9973 * (a + 1) + d * 31, a === 0);
+    if (!best || [r.holes - best.holes, r.endSum - best.endSum, r.nMoved - best.nMoved, r.early - best.early, r.grUse - best.grUse].find(x => x !== 0) < 0) best = r;
+    if (best.holes === 0 && a >= 20) break;
+  }
+  const newLast = {}, origStart = start;
+  classes.forEach(c => { newLast[c] = best.lastOf(c); });
+  return {
+    d, P, classes, base, firstT, start: origStart, origLast, newLast,
+    entries: best.st, removed, unknown, holes: best.holeList,
+    moved: best.st.filter(e => e.p !== e.p0).sort((a, b) => a.p0 - b.p0 || clsSort(a.cls[0], b.cls[0])),
+    at: best.at,
+  };
+}
+if (typeof module !== 'undefined') module.exports = { parseSheet, classesOf, compactDay, DAYS };
+</script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const K = { tt:'suite-timetable-v1', plan:'gr-plan-v1', draft:'sym-draft-v1' };
+const ls = { get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { return false; } } };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const key = s => capsGr(s).replace(/\s+/g, ' ').trim();
+const DSHORT = ['Δευ', 'Τρί', 'Τετ', 'Πέμ', 'Παρ'];
+const GEN = ['Δευτέρας', 'Τρίτης', 'Τετάρτης', 'Πέμπτης', 'Παρασκευής'];
+function toast(m){ const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 3200); }
+function fromB64(s){ const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
+function toB64(buf){ const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function nextSchoolDay(){ const d = new Date(); if (d.getHours() >= 15) d.setDate(d.getDate() + 1); while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1); return d.getDay() - 1; }
+const surname = n => String(n).split(' ')[0];
+const ord = p => p + 'η';
+
+// Κατάσταση: απόντες ως { name: [μέρες] }, καρφωμένα μαθήματα ως "μέρα|όνομα|ώρα", κανόνες.
+const A = { model:null, fname:'', grSrc:'', gr:null, absent:[], pins:new Set(), opts:{ useGR:true, notEarlier:false, keepDouble:false }, day:-1, view:'cls', res:{} };
+
+/* ---------- πηγή: το κοινό πρόγραμμα της σουίτας (και τα ΓΡ, αν έχει γίνει κατανομή) ---------- */
+async function loadSource(manual){
+  let buf = null, fname = '', plan = null;
+  if (manual) { buf = manual.buf; fname = manual.name; }
+  else {
+    const pl = ls.get(K.plan), tt = ls.get(K.tt);
+    const planOk = pl && pl.file, ttOk = tt && tt.file;
+    if (planOk && (!ttOk || (pl.at || 0) >= (tt.at || 0) || pl.fname === tt.fname)) { buf = fromB64(pl.file); fname = pl.fname; plan = pl; }
+    else if (ttOk) { buf = fromB64(tt.file); fname = tt.fname; }
+  }
+  if (!buf) { $('empty').hidden = false; $('main').hidden = true; return; }
+  if (!window.ExcelJS) { toast('Η βιβλιοθήκη Excel δεν φόρτωσε — χρειάζεται σύνδεση την πρώτη φορά.'); return; }
+  try {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf.slice(0));
+    const m = parseSheet(wb.worksheets[0]);
+    A.model = m; A.fname = fname;
+    if (plan && Array.isArray(plan.assign) && plan.assign.length === m.teachers.length) { A.gr = plan.assign.map(a => new Set(a)); A.grSrc = 'από την εφαρμογή ΓΡ'; }
+    else { A.gr = null; A.grSrc = m.teachers.some(t => t.cells.includes('G')) ? 'από το αρχείο' : 'κανένα'; }
+    if (manual) { try { localStorage.setItem(K.tt, JSON.stringify({ fname, at: Date.now(), from: 'sy', file: toB64(buf) })); } catch(e) { /* χωρίς χώρο: απλώς δεν μοιράζεται */ } }
+    $('empty').hidden = true; $('main').hidden = false;
+    restoreDraft();
+    fillSelect(); render();
+  } catch(e) { toast('Δεν διαβάστηκε το πρόγραμμα: ' + (e.message || e)); if (!A.model) { $('empty').hidden = false; $('main').hidden = true; } }
+}
+
+/* ---------- πρόχειρο ---------- */
+function saveDraft(){
+  if (!A.model) return;
+  ls.set(K.draft, { at: Date.now(), absent: A.absent.map(a => ({ name: A.model.teachers[a.ti].name, days: a.days })), pins: [...A.pins], opts: A.opts, day: A.day, view: A.view });
+}
+function restoreDraft(){
+  const dr = ls.get(K.draft); const m = A.model;
+  A.absent = [];
+  if (dr) {
+    (dr.absent || []).forEach(a => { const ti = m.teachers.findIndex(t => key(t.name) === key(a.name)); if (ti >= 0 && !A.absent.some(x => x.ti === ti)) A.absent.push({ ti, days: (a.days || []).filter(d => d >= 0 && d < 5) }); });
+    A.pins = new Set(dr.pins || []);
+    if (dr.opts) Object.assign(A.opts, dr.opts);
+    if (typeof dr.day === 'number') A.day = dr.day;
+    if (dr.view) A.view = dr.view;
+  }
+  $('o-gr').checked = A.opts.useGR; $('o-early').checked = A.opts.notEarlier; $('o-double').checked = A.opts.keepDouble;
+}
+
+/* ---------- υπολογισμός ---------- */
+const lessonsOn = (ti, d) => { const m = A.model, t = m.teachers[ti]; return m.slots.reduce((n, s, si) => n + (s.day === d && t.cells[si] === 'L' ? 1 : 0), 0); };
+function activeDays(){ return [...new Set(A.absent.flatMap(a => a.days))].sort((a, b) => a - b); }
+function pinSet(d){ const m = A.model, out = new Set(); A.pins.forEach(k => { const [dd, name, p] = k.split('|'); if (+dd !== d) return; const ti = m.teachers.findIndex(t => t.name === name); if (ti < 0) return; const si = m.slots.findIndex(s => s.day === d && s.period === +p); if (si >= 0) out.add(`${ti}:${si}`); }); return out; }
+function compute(){
+  const m = A.model; A.res = {};
+  activeDays().forEach(d => {
+    const absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti));
+    A.res[d] = compactDay(m, d, { absent, gr: A.gr, opts: A.opts, pins: pinSet(d) });
+  });
+}
+
+/* ---------- προβολή ---------- */
+function fillSelect(){
+  const m = A.model, sel = $('addAbs');
+  const opts = m.teachers.map((t, i) => ({ t, i })).filter(o => !o.t.staff && !A.absent.some(a => a.ti === o.i))
+    .sort((a, b) => a.t.name.localeCompare(b.t.name, 'el'))
+    .map(o => `<option value="${o.i}">${esc(o.t.name)}${o.t.spec ? ' · ' + esc(o.t.spec) : ''}</option>`);
+  sel.innerHTML = '<option value="">+ Προσθήκη εκπαιδευτικού…</option>' + opts.join('');
+}
+function renderAbsent(){
+  const m = A.model;
+  $('src').innerHTML = `<span>Πρόγραμμα: <b>${esc(A.fname || m.title || '—')}</b></span><span>ΓΡ: <b>${esc(A.grSrc)}</b></span>` +
+    `<label class="btn file-btn no-print">Άλλο αρχείο…<input type="file" id="file2" accept=".xlsx"></label>`;
+  $('absList').innerHTML = A.absent.map(a => {
+    const t = m.teachers[a.ti];
+    const days = DAYS.map((_, d) => { const n = lessonsOn(a.ti, d); return `<button type="button" data-ti="${a.ti}" data-d="${d}" aria-pressed="${a.days.includes(d)}"${n || a.days.includes(d) ? '' : ' disabled'} title="${DAYS[d]}: ${n} ${n === 1 ? 'ώρα' : 'ώρες'}">${DSHORT[d]}<small>${n}</small></button>`; }).join('');
+    return `<li><span class="nm">${esc(t.name)}${t.spec ? `<small>${esc(t.spec)}</small>` : ''}</span><span class="dsel" role="group" aria-label="Μέρες απουσίας">${days}</span><button type="button" class="rm" data-rm="${a.ti}" aria-label="Αφαίρεση ${esc(t.name)}">×</button></li>`;
+  }).join('');
+  $('clearAbs').hidden = !A.absent.length;
+  const n = Object.values(A.opts).filter(Boolean).length;
+  $('rulesSum').textContent = [A.opts.useGR ? 'και σε ΓΡ' : 'όχι σε ΓΡ', A.opts.notEarlier ? 'όχι νωρίτερη προσέλευση' : '', A.opts.keepDouble ? 'δίωρα σταθερά' : ''].filter(Boolean).join(' · ');
+}
+function render(){
+  if (!A.model) return;
+  renderAbsent();
+  compute();
+  const days = activeDays();
+  $('result').hidden = !days.length;
+  if (!days.length) { saveDraft(); return; }
+  if (!days.includes(A.day)) A.day = days[0];
+  $('tabs').innerHTML = days.map(d => {
+    const r = A.res[d]; const h = r ? r.holes.length : 0;
+    return `<button type="button" role="tab" data-day="${d}" aria-selected="${d === A.day}">${DAYS[d]}${h ? ` <small>· ${h} κεν${h === 1 ? 'ό' : 'ά'}</small>` : ''}</button>`;
+  }).join('');
+  renderDay();
+  saveDraft();
+}
+function absentNames(d){ return A.absent.filter(a => a.days.includes(d)).map(a => A.model.teachers[a.ti].name); }
+function renderDay(){
+  const m = A.model, d = A.day, r = A.res[d];
+  document.querySelectorAll('.seg [data-v]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === A.view)));
+  $('dayTitle').textContent = 'Πρόγραμμα ' + GEN[d];
+  if (!r) { $('grid').innerHTML = ''; $('changes').innerHTML = '<p class="sub">Η μέρα δεν υπάρχει στο πρόγραμμα.</p>'; return; }
+  const earlier = r.classes.filter(c => r.newLast[c] < r.origLast[c]);
+  $('chips').innerHTML =
+    `<span class="chip">Απόντες <b>${absentNames(d).length}</b></span>` +
+    `<span class="chip">Ώρες που χάνονται <b>${r.removed.length}</b></span>` +
+    `<span class="chip mv">Μετακινήσεις <b>${r.moved.length}</b></span>` +
+    `<span class="chip ${r.holes.length ? 'bad' : 'good'}">Κενά που μένουν <b>${r.holes.length}</b></span>` +
+    `<span class="chip good">Σχολάνε νωρίτερα <b>${earlier.length}</b></span>`;
+  if (A.view === 'cls') renderClassGrid(r); else renderTeacherGrid(r);
+  renderChanges(r);
+  $('unknown').innerHTML = r.unknown.length ? `<div class="warnbox">Δεν αναγνωρίστηκε τμήμα σε ${r.unknown.length} ${r.unknown.length === 1 ? 'κελί' : 'κελιά'} (${[...new Set(r.unknown.map(u => u.label))].slice(0, 8).map(esc).join(', ')}). Αυτά μένουν στη θέση τους και μετράνε ως απασχόληση του καθηγητή.</div>` : '';
+}
+function renderClassGrid(r){
+  const m = A.model, P = r.P;
+  $('legend').innerHTML = '<span><i style="background:var(--mv-soft)"></i>Ανέβηκε (↑ από ποια ώρα)</span><span><i style="background:var(--bad-soft)"></i>Κενό που μένει</span><span><i style="background:repeating-linear-gradient(135deg,transparent 0 5px,var(--soft) 5px 6px)"></i>Έχει σχολάσει</span>';
+  let h = '<thead><tr><th class="nm">Τμήμα</th>' + Array.from({ length: P }, (_, i) => `<th>${ord(i + 1)}</th>`).join('') + '</tr></thead><tbody>';
+  const holes = new Set(r.holes.map(x => `${x.c}|${x.p}`));
+  r.classes.forEach(c => {
+    const changed = r.newLast[c] !== r.origLast[c] || r.entries.some(e => e.p !== e.p0 && e.cls.includes(c));
+    h += `<tr class="${changed ? 'chg' : ''}"><td class="nm" title="Σχολάει ${ord(r.newLast[c])}${r.newLast[c] !== r.origLast[c] ? ` (αντί ${ord(r.origLast[c])})` : ''}">${esc(c)}</td>`;
+    for (let p = 1; p <= P; p++) {
+      const es = r.at(c, p);
+      if (es.length) {
+        const mv = es.some(e => e.p !== e.p0), pin = es.some(e => A.pins.has(pinKey(r.d, e)));
+        const names = es.map(e => surname(m.teachers[e.ti].name)).join(' / ');
+        const tip = es.map(e => `${m.teachers[e.ti].name} · ${e.label}${e.p !== e.p0 ? ` · από ${ord(e.p0)}` : ''}`).join('\n');
+        h += `<td class="c pick ${mv ? 'M' : 'L'}${pin ? ' pin' : ''}" data-id="${es[0].id}" title="${esc(tip)}">${esc(names)}${mv ? `<small>↑ από ${ord(es[0].p0)}</small>` : ''}</td>`;
+      } else if (holes.has(`${c}|${p}`)) h += '<td class="c H" title="Κενό που δεν καλύφθηκε">κενό</td>';
+      else if (p > r.newLast[c] || p < r.start[c]) h += '<td class="c X"></td>';
+      else h += '<td class="c"></td>';
+    }
+    h += '</tr>';
+  });
+  $('grid').innerHTML = h + '</tbody>';
+  $('gridNote').textContent = 'Πάτα ένα μάθημα για να μείνει καρφωμένο στη θέση του (αν είχε ανέβει, γυρίζει πίσω και ο υπολογισμός ξαναγίνεται). Ξαναπάτα για να ξεκαρφωθεί.';
+}
+function renderTeacherGrid(r){
+  const m = A.model, P = r.P, d = r.d;
+  const absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti));
+  $('legend').innerHTML = '<span><i style="background:var(--mv-soft)"></i>Νέα θέση μαθήματος</span><span><i style="background:var(--off)"></i>Απών</span><span>· = η ώρα που άδειασε</span><span style="color:var(--gr);font-weight:700">ΓΡ</span>';
+  const byT = {}; r.entries.forEach(e => { (byT[e.ti] = byT[e.ti] || {})[e.p] = e; });
+  const vacated = {}; r.entries.forEach(e => { if (e.p !== e.p0) (vacated[e.ti] = vacated[e.ti] || new Set()).add(e.p0); });
+  const rm = {}; r.removed.forEach(e => { (rm[e.ti] = rm[e.ti] || {})[e.p0] = e; });
+  const rows = m.teachers.map((t, ti) => ({ t, ti })).filter(o => !o.t.staff && (byT[o.ti] || absent.has(o.ti)));
+  rows.sort((a, b) => (absent.has(b.ti) - absent.has(a.ti)) || ((vacated[b.ti] ? 1 : 0) - (vacated[a.ti] ? 1 : 0)) || a.t.name.localeCompare(b.t.name, 'el'));
+  let h = '<thead><tr><th class="nm">Εκπαιδευτικός</th>' + Array.from({ length: P }, (_, i) => `<th>${ord(i + 1)}</th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(({ t, ti }) => {
+    const isAbs = absent.has(ti);
+    h += `<tr class="${isAbs ? 'absrow' : vacated[ti] ? 'chg' : ''}"><td class="nm" title="${esc(t.name)}">${esc(t.name)}</td>`;
+    for (let p = 1; p <= P; p++) {
+      if (isAbs) { const e = rm[ti] && rm[ti][p]; h += `<td class="c A">${e ? `<s>${esc(e.label)}</s>` : ''}</td>`; continue; }
+      const e = byT[ti] && byT[ti][p];
+      if (e) {
+        const mv = e.p !== e.p0, pin = A.pins.has(pinKey(d, e));
+        const gr = mv && r.base[ti][p] === 1;
+        h += `<td class="c pick ${mv ? 'M' : 'L'}${pin ? ' pin' : ''}" data-id="${e.id}" title="${esc(e.label)}${mv ? ` · από ${ord(e.p0)}` : ''}${gr ? ' · στη θέση ΓΡ' : ''}">${esc(e.label)}${mv ? `<small>↑ από ${ord(e.p0)}</small>` : ''}</td>`;
+      } else if (vacated[ti] && vacated[ti].has(p)) h += '<td class="c V" title="Άδειασε">·</td>';
+      else if (r.base[ti][p] === 1) h += '<td class="c Gr">ΓΡ</td>';
+      else if (r.base[ti][p] === 2) h += '<td class="c Bz">—</td>';
+      else h += '<td class="c"></td>';
+    }
+    h += '</tr>';
+  });
+  $('grid').innerHTML = h + '</tbody>';
+  $('gridNote').textContent = 'Πάνω οι απόντες και όσοι έχουν αλλαγές. Πάτα ένα μάθημα για να μείνει καρφωμένο στη θέση του.';
+}
+function changeModel(r){
+  const m = A.model, d = r.d;
+  const byTeacher = {};
+  r.moved.forEach(e => {
+    const tags = [];
+    if (r.base[e.ti][e.p] === 1) tags.push('gr');
+    if (e.p < r.firstT[e.ti]) tags.push('early');
+    if (e.span) tags.push('double');
+    (byTeacher[e.ti] = byTeacher[e.ti] || []).push({ label: e.label, from: e.p0, to: e.p, tags });
+  });
+  const lost = {};
+  r.removed.forEach(e => { (lost[e.ti] = lost[e.ti] || []).push(e); });
+  const earlier = r.classes.filter(c => r.newLast[c] < r.origLast[c]).map(c => ({ c, from: r.origLast[c], to: r.newLast[c] }));
+  return { byTeacher, lost, earlier, holes: r.holes.slice().sort((a, b) => a.p - b.p || clsSort(a.c, b.c)) };
+}
+const TAGTXT = { gr: 'στη θέση ΓΡ', early: 'έρχεται νωρίτερα', double: 'σπάει δίωρο' };
+function renderChanges(r){
+  const m = A.model, c = changeModel(r);
+  let h = '';
+  const tis = Object.keys(c.byTeacher).map(Number).sort((a, b) => m.teachers[a].name.localeCompare(m.teachers[b].name, 'el'));
+  h += '<h3>Μετακινήσεις</h3>';
+  h += tis.length ? '<ul>' + tis.map(ti => `<li><b>${esc(m.teachers[ti].name)}</b><br>` + c.byTeacher[ti].sort((a, b) => a.from - b.from).map(x =>
+    `${esc(x.label)}: <span class="arrow">${ord(x.from)} → ${ord(x.to)}</span>${x.tags.map(t => `<span class="tag ${t === 'gr' ? 'gr' : 'wn'}">${TAGTXT[t]}</span>`).join('')}`).join('<br>') + '</li>').join('') + '</ul>'
+    : '<p class="sub">Καμία· τα κενά βρίσκονται στο τέλος της μέρας ή δεν μπορούν να καλυφθούν.</p>';
+  if (c.earlier.length) h += '<h3>Σχολάνε νωρίτερα</h3><ul><li>' + c.earlier.map(x => `<b>${esc(x.c)}</b> μετά την ${ord(x.to)} <span style="color:var(--muted)">(αντί ${ord(x.from)})</span>`).join(' · ') + '</li></ul>';
+  if (c.holes.length) h += '<h3>Κενά που μένουν</h3><ul><li>' + c.holes.map(x => `<b>${esc(x.c)}</b> ${ord(x.p)}`).join(' · ') +
+    '<br><span style="color:var(--muted);font-size:13px">Κανένα μάθημα δεν μπορούσε να ανέβει εκεί. Χρειάζονται αναπλήρωση — <a href="../anaplirwseis/">Αναπληρώσεις</a>.</span></li></ul>';
+  const lt = Object.keys(c.lost).map(Number);
+  if (lt.length) h += '<h3>Ώρες απόντων</h3><ul>' + lt.map(ti => `<li><b>${esc(m.teachers[ti].name)}</b><br><span style="color:var(--muted)">${c.lost[ti].sort((a, b) => a.p0 - b.p0).map(e => `${ord(e.p0)} ${esc(e.label)}`).join(' · ')}</span></li>`).join('') + '</ul>';
+  $('changes').innerHTML = h;
+  $('xlsxNote').textContent = activeDays().length > 1 ? `Το Excel περιέχει όλες τις μέρες με απουσίες (${activeDays().map(d => DAYS[d]).join(', ')}).` : '';
+}
+function changesText(r){
+  const m = A.model, c = changeModel(r), lines = [];
+  lines.push(`ΑΛΛΑΓΕΣ ΠΡΟΓΡΑΜΜΑΤΟΣ — ${DAYS[r.d].toUpperCase()}`);
+  const ab = absentNames(r.d); if (ab.length) lines.push('Απόντες: ' + ab.join(', '));
+  lines.push('');
+  Object.keys(c.byTeacher).map(Number).sort((a, b) => m.teachers[a].name.localeCompare(m.teachers[b].name, 'el')).forEach(ti => {
+    c.byTeacher[ti].sort((a, b) => a.from - b.from).forEach(x => lines.push(`${m.teachers[ti].name} · ${x.label}: ${ord(x.from)} ώρα → ${ord(x.to)} ώρα${x.tags.length ? ' (' + x.tags.map(t => TAGTXT[t]).join(', ') + ')' : ''}`));
+  });
+  if (c.earlier.length) { lines.push(''); lines.push('Σχολάνε νωρίτερα: ' + c.earlier.map(x => `${x.c} μετά την ${ord(x.to)}`).join(', ')); }
+  if (c.holes.length) { lines.push(''); lines.push('Κενά για αναπλήρωση: ' + c.holes.map(x => `${x.c} ${ord(x.p)}`).join(', ')); }
+  return lines.join('\n');
+}
+const pinKey = (d, e) => `${d}|${A.model.teachers[e.ti].name}|${e.p0}`;
+
+/* ---------- Excel ---------- */
+const FILL = c => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } });
+const THIN = { style: 'thin', color: { argb: 'FF9AA5A6' } };
+const BORDER = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+async function buildXlsx(){
+  const m = A.model, wb = new ExcelJS.Workbook();
+  wb.creator = 'Συμπύκνωση'; wb.created = new Date();
+  const school = (m.title || '').split(' · ')[0];
+  const all = [];
+  activeDays().forEach(d => {
+    const r = A.res[d]; if (!r) return;
+    const P = r.P, absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti));
+    // Φύλλο 1: ίδια διάταξη με το ωρολόγιο (ανοίγει και στις άλλες εφαρμογές)
+    const ws = wb.addWorksheet(DAYS[d], { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .4, right: .4, top: .5, bottom: .5, header: .2, footer: .2 } }, views: [{ state: 'frozen', xSplit: 2, ySplit: 5 }] });
+    ws.getCell(1, 1).value = school || 'Ωρολόγιο πρόγραμμα';
+    ws.getCell(2, 1).value = `Συμπυκνωμένο πρόγραμμα ${GEN[d]} · Απόντες: ${absentNames(d).join(', ') || '—'}`;
+    ws.getCell(1, 1).font = { bold: true, size: 13 }; ws.getCell(2, 1).font = { bold: true, size: 11, color: { argb: 'FF00695C' } };
+    ws.getCell(4, 1).value = 'ΕΚΠΑΙΔΕΥΤΙΚΟΣ'; ws.getCell(4, 2).value = 'ΕΙΔΙΚΟΤΗΤΑ';
+    ws.getCell(4, 3).value = DAYS[d]; ws.mergeCells(4, 3, 4, 2 + P);
+    ws.getCell(4, 3 + P).value = 'ΣΗΜΕΙΩΣΗ';
+    for (let p = 1; p <= P; p++) ws.getCell(5, 2 + p).value = p;
+    [4, 5].forEach(rr => { for (let c = 1; c <= 3 + P; c++) { const x = ws.getCell(rr, c); x.font = { bold: true }; x.alignment = { horizontal: 'center', vertical: 'middle' }; x.fill = FILL('DCEFEC'); x.border = BORDER; } });
+    ws.getColumn(1).width = 30; ws.getColumn(2).width = 11; for (let p = 1; p <= P; p++) ws.getColumn(2 + p).width = 9; ws.getColumn(3 + P).width = 44;
+    const byT = {}; r.entries.forEach(e => { (byT[e.ti] = byT[e.ti] || {})[e.p] = e; });
+    const S = m.slots.map((s, si) => ({ ...s, si })).filter(s => s.day === d);
+    let row = 6;
+    m.teachers.forEach((t, ti) => {
+      if (t.staff) return;
+      ws.getCell(row, 1).value = t.name; ws.getCell(row, 2).value = t.spec;
+      const notes = [];
+      for (let p = 1; p <= P; p++) {
+        const x = ws.getCell(row, 2 + p); x.border = BORDER; x.alignment = { horizontal: 'center', vertical: 'middle' };
+        if (absent.has(ti)) { x.fill = FILL('BFBFBF'); continue; }
+        const e = byT[ti] && byT[ti][p];
+        if (e) {
+          x.value = e.label;
+          if (e.p !== e.p0) { x.fill = FILL('B2DFDB'); x.font = { bold: true, color: { argb: 'FF004D40' } }; x.note = `Από την ${ord(e.p0)} ώρα`; notes.push(`${e.label} ${ord(e.p0)}→${ord(e.p)}`); }
+        } else {
+          const s = S.find(s => s.period === p), c = s ? t.cells[s.si] : 'F';
+          const isGr = A.gr && A.gr[ti] ? A.gr[ti].has(s && s.si) : c === 'G';
+          if (c === 'P') x.value = 'ΓΟΝ';
+          else if (c === 'L' && !classesOf(t.labels[s.si]).length) x.value = t.labels[s.si];
+          else if (isGr) x.value = 'ΓΡ';
+          if (s && t.grey[s.si]) x.fill = FILL('BFBFBF');
+        }
+      }
+      if (absent.has(ti)) notes.push('ΑΠΩΝ');
+      const nc = ws.getCell(row, 3 + P); nc.value = notes.join(' · '); nc.border = BORDER; if (notes.length) nc.font = { bold: true, color: { argb: absent.has(ti) ? 'FFB3261E' : 'FF004D40' } };
+      ws.getCell(row, 1).border = BORDER; ws.getCell(row, 2).border = BORDER;
+      if (notes.length) ws.getCell(row, 1).font = { bold: true };
+      row++;
+    });
+    ws.pageSetup.printArea = `A1:${String.fromCharCode(66 + P + 1)}${row - 1}`;
+    // Φύλλο 2: ανά τμήμα
+    const wc = wb.addWorksheet(`${DAYS[d]} τμήματα`, { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 1 } });
+    wc.getCell(1, 1).value = `Πρόγραμμα τμημάτων ${GEN[d]} (μετά τη συμπύκνωση)`; wc.getCell(1, 1).font = { bold: true, size: 13 };
+    wc.getCell(3, 1).value = 'ΤΜΗΜΑ';
+    for (let p = 1; p <= P; p++) wc.getCell(3, 1 + p).value = ord(p);
+    wc.getCell(3, 2 + P).value = 'ΣΧΟΛΑΕΙ';
+    for (let c = 1; c <= 2 + P; c++) { const x = wc.getCell(3, c); x.font = { bold: true }; x.fill = FILL('DCEFEC'); x.border = BORDER; x.alignment = { horizontal: 'center' }; }
+    wc.getColumn(1).width = 10; for (let p = 1; p <= P; p++) wc.getColumn(1 + p).width = 22; wc.getColumn(2 + P).width = 16;
+    const holes = new Set(r.holes.map(x => `${x.c}|${x.p}`));
+    r.classes.forEach((c, i) => {
+      const rr = 4 + i; wc.getCell(rr, 1).value = c; wc.getCell(rr, 1).font = { bold: true }; wc.getCell(rr, 1).border = BORDER;
+      for (let p = 1; p <= P; p++) {
+        const x = wc.getCell(rr, 1 + p), es = r.at(c, p); x.border = BORDER; x.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        if (es.length) { x.value = es.map(e => surname(m.teachers[e.ti].name) + (e.p !== e.p0 ? ` (από ${ord(e.p0)})` : '')).join(' / '); if (es.some(e => e.p !== e.p0)) { x.fill = FILL('B2DFDB'); x.font = { bold: true, color: { argb: 'FF004D40' } }; } }
+        else if (holes.has(`${c}|${p}`)) { x.value = 'ΚΕΝΟ'; x.fill = FILL('F8D7D4'); x.font = { bold: true, color: { argb: 'FFB3261E' } }; }
+        else if (p > r.newLast[c]) x.fill = FILL('F1F4F4');
+      }
+      const z = wc.getCell(rr, 2 + P); z.value = `μετά την ${ord(r.newLast[c])}` + (r.newLast[c] < r.origLast[c] ? ` (αντί ${ord(r.origLast[c])})` : ''); z.border = BORDER;
+      if (r.newLast[c] < r.origLast[c]) z.font = { bold: true, color: { argb: 'FF2E7D4F' } };
+    });
+    const cm = changeModel(r);
+    Object.keys(cm.byTeacher).map(Number).forEach(ti => cm.byTeacher[ti].forEach(x => all.push([DAYS[d], m.teachers[ti].name, x.label, ord(x.from), ord(x.to), x.tags.map(t => TAGTXT[t]).join(', ')])));
+    cm.holes.forEach(x => all.push([DAYS[d], '—', x.c, ord(x.p), '', 'Κενό για αναπλήρωση']));
+  });
+  const wa = wb.addWorksheet('Αλλαγές', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  wa.addRow(['Ημέρα', 'Εκπαιδευτικός', 'Τμήμα', 'Από ώρα', 'Σε ώρα', 'Σημείωση']).eachCell(x => { x.font = { bold: true }; x.fill = FILL('DCEFEC'); x.border = BORDER; });
+  all.forEach(a => wa.addRow(a).eachCell(x => { x.border = BORDER; }));
+  [12, 32, 12, 10, 10, 30].forEach((w, i) => wa.getColumn(i + 1).width = w);
+  return new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+function download(blob, name){
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/* ---------- συμβάντα ---------- */
+$('addAbs').addEventListener('change', e => {
+  if (e.target.value === '') return;
+  const ti = +e.target.value, nd = nextSchoolDay();
+  A.absent.push({ ti, days: lessonsOn(ti, nd) ? [nd] : [] });
+  if (lessonsOn(ti, nd)) A.day = nd;
+  fillSelect(); render();
+});
+$('absList').addEventListener('click', e => {
+  const rm = e.target.closest('[data-rm]');
+  if (rm) { const ti = +rm.dataset.rm; A.absent = A.absent.filter(a => a.ti !== ti); fillSelect(); render(); return; }
+  const b = e.target.closest('button[data-d]'); if (!b) return;
+  const a = A.absent.find(x => x.ti === +b.dataset.ti), d = +b.dataset.d; if (!a) return;
+  a.days = a.days.includes(d) ? a.days.filter(x => x !== d) : a.days.concat(d).sort();
+  if (a.days.includes(d)) A.day = d;
+  render();
+});
+$('clearAbs').addEventListener('click', () => { if (!confirm('Να αφαιρεθούν όλοι οι απόντες και τα καρφωμένα μαθήματα;')) return; A.absent = []; A.pins = new Set(); fillSelect(); render(); });
+['o-gr', 'o-early', 'o-double'].forEach(id => $(id).addEventListener('change', () => {
+  A.opts = { useGR: $('o-gr').checked, notEarlier: $('o-early').checked, keepDouble: $('o-double').checked }; render();
+}));
+$('tabs').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; A.day = +b.dataset.day; render(); });
+document.querySelector('.seg').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; A.view = b.dataset.v; renderDay(); saveDraft(); });
+$('grid').addEventListener('click', e => {
+  const td = e.target.closest('td[data-id]'); if (!td) return;
+  const r = A.res[A.day], en = r && r.entries.find(x => x.id === td.dataset.id); if (!en) return;
+  const k = pinKey(A.day, en);
+  if (A.pins.has(k)) { A.pins.delete(k); toast('Ξεκαρφώθηκε'); }
+  else { A.pins.add(k); toast(en.p !== en.p0 ? `Γύρισε στην ${ord(en.p0)} ώρα και μένει εκεί` : 'Καρφώθηκε στη θέση του'); }
+  render();
+});
+$('xlsx').addEventListener('click', async () => {
+  const b = $('xlsx'); b.disabled = true;
+  try { const blob = await buildXlsx(); const ds = activeDays().map(d => DSHORT[d]).join('-'); download(blob, `Συμπύκνωση_${ds}.xlsx`); }
+  catch(err) { toast('Σφάλμα: ' + (err.message || err)); }
+  finally { b.disabled = false; }
+});
+$('copy').addEventListener('click', async () => {
+  const t = changesText(A.res[A.day]);
+  try { await navigator.clipboard.writeText(t); toast('Αντιγράφηκαν οι αλλαγές της μέρας'); }
+  catch(e) { prompt('Αντέγραψε το κείμενο:', t); }
+});
+$('print').addEventListener('click', () => window.print());
+async function pickFile(f){ if (!f) return; if (!/\.xlsx$/i.test(f.name)) { toast('Χρειάζεται αρχείο .xlsx'); return; } await loadSource({ buf: await f.arrayBuffer(), name: f.name }); }
+$('file').addEventListener('change', async e => { await pickFile(e.target.files[0]); e.target.value = ''; });
+document.addEventListener('change', async e => { if (e.target.id === 'file2') { await pickFile(e.target.files[0]); e.target.value = ''; } });
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => pickFile(e.dataTransfer.files[0]));
+window.addEventListener('storage', e => { if (e.key === K.plan || e.key === K.tt) loadSource(); });
+
+loadSource();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
