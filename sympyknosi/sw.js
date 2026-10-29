@@ -1,5 +1,5 @@
 // Offline για την εφαρμογή Συμπύκνωσης. Άλλαξε το VERSION σε κάθε έκδοση.
-const VERSION = 'sym-v1';
+const VERSION = 'sym-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', '../gr/exceljs.min.js'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).then(() => self.skipWaiting()));
