@@ -16,19 +16,19 @@
 <style>
   :root{
     --bg:#EEF4FF; --surface:#FFFFFF; --ink:#0B1F5C; --muted:#4A5E86; --line:#D5E2F7;
-    --blue:#0B63CE; --blue-deep:#0B3FA8; --green:#2F6B3F; --green-soft:#E3F1E7; --red:#C62828; --red-soft:#FBE5E5; --indigo:#3949AB; --indigo-soft:#E6E9FA;
+    --blue:#0B63CE; --blue-deep:#0B3FA8; --green:#2F6B3F; --green-soft:#E3F1E7; --red:#C62828; --red-soft:#FBE5E5; --indigo:#3949AB; --indigo-soft:#E6E9FA; --teal:#00796B; --teal-soft:#DDF1EE;
     --shadow:0 1px 2px rgba(11,31,92,.06), 0 8px 24px rgba(11,31,92,.08);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#0A1230; --surface:#111C45; --ink:#EAF1FF; --muted:#9DB0DA; --line:#25356B;
-      --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717; --indigo:#A9B2FF; --indigo-soft:#232A5C;
+      --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717; --indigo:#A9B2FF; --indigo-soft:#232A5C; --teal:#4DB6AC; --teal-soft:#173C38;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
     }
   }
   :root[data-theme="dark"]{
     --bg:#0A1230; --surface:#111C45; --ink:#EAF1FF; --muted:#9DB0DA; --line:#25356B;
-    --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717; --indigo:#A9B2FF; --indigo-soft:#232A5C;
+    --blue:#5AA2FF; --blue-deep:#7DB6FF; --green:#7BD08F; --green-soft:#16301F; --red:#FF7B7B; --red-soft:#3A1717; --indigo:#A9B2FF; --indigo-soft:#232A5C; --teal:#4DB6AC; --teal-soft:#173C38;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box;}
@@ -54,6 +54,7 @@
   a.card.ef{--accent:var(--green); --soft:var(--green-soft);}
   a.card.gr{--accent:var(--red); --soft:var(--red-soft);}
   a.card.an{--accent:var(--indigo); --soft:var(--indigo-soft);}
+  a.card.sy{--accent:var(--teal); --soft:var(--teal-soft);}
   .week{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px 22px; box-shadow:var(--shadow); margin:0 0 16px;}
   .week[hidden]{display:none;}
   .week-h{display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:space-between; margin-bottom:12px;}
@@ -162,6 +163,17 @@
         <div class="sync" hidden></div>
         <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
+      <a class="card sy" href="sympyknosi/" data-app="sy">
+        <div class="card-top"><div class="ico" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="17" rx="2.5"/><path d="M2.5 9.2h13M2.5 14.8h13M9 3.5v17"/><path d="M20 20.5V6.5M17 9.5l3-3 3 3"/></svg>
+        </div></div>
+        <h2>Συμπύκνωση προγράμματος</h2>
+        <p>Δηλώνεις ποιοι λείπουν και ποιες μέρες· για εκείνες τις μέρες τα μαθήματα ανεβαίνουν προς την 1η ώρα ώστε τα τμήματα να μη μένουν με κενά. Βγάζει Excel της ημέρας.</p>
+        <div class="tags"><span class="tag">Πρόγραμμα → Excel ημέρας</span><span class="tag">Στον browser σου</span></div>
+        <div class="status" hidden></div>
+        <div class="sync" hidden></div>
+        <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
     </div>
 
     <div class="install" id="install">
@@ -226,6 +238,13 @@
   }
   var gr = get('gr-plan-v1');
   if (gr && gr.file) info.gr = (gr.fname ? '<b>' + esc(gr.fname) + '</b> · ' : 'Αποθηκευμένη κατανομή · ') + when(gr.at);
+  var sy = get('sym-draft-v1');
+  if (sy && sy.absent && sy.absent.length) {
+    var DD = ['Δευ', 'Τρί', 'Τετ', 'Πέμ', 'Παρ'], ds = {};
+    sy.absent.forEach(function (a) { (a.days || []).forEach(function (d) { ds[d] = 1; }); });
+    var dl = Object.keys(ds).sort().map(function (d) { return DD[d]; }).join(', ');
+    info.sy = '<b>' + sy.absent.length + '</b> ' + (sy.absent.length === 1 ? 'απών' : 'απόντες') + (dl ? ' · ' + dl : '') + ' · ' + when(sy.at);
+  }
   var last = null; try { last = localStorage.getItem('suite-last-app'); } catch (e) {}
   Array.prototype.forEach.call(document.querySelectorAll('a.card[data-app]'), function (card) {
     var app = card.getAttribute('data-app');

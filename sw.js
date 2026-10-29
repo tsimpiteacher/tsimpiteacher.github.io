@@ -1,5 +1,5 @@
 /* Service worker αρχικής σελίδας: offline για το ίδιο το κέλυφος. Δεν αγγίζει τις εφαρμογές /efimeries/ και /gr/. */
-const CACHE = 'suite-hub-v4';
+const CACHE = 'suite-hub-v5';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png', './logo.webp'];
 
 self.addEventListener('install', (e) => {
