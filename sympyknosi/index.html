@@ -695,7 +695,9 @@ async function buildWeekXlsx(baseFile, days){
           return;
         }
         cell.value = c === 'G' ? GR : c === 'P' ? PAR : (c === 'L' && !classesOf(t.labels[s.si]).length) ? t.labels[s.si] : null;
-        if (c === 'L' && classesOf(t.labels[s.si]).length && !t.grey[s.si]) cell.fill = { type: 'pattern', pattern: 'none' };
+        // κενό που δημιουργήθηκε: το μάθημα αυτής της ώρας ανέβηκε νωρίτερα → κίτρινο γέμισμα (μένει και στο Excel του ΓΡ)
+        const up = c === 'L' && r.entries.find(x => x.ti === ti && x.p0 === s.period && x.p !== x.p0);
+        if (up) { cell.fill = FILL('FFFF00'); cell.note = `Συμπύκνωση: κενό — το ${up.label} ανέβηκε στην ${ord(up.p)} ώρα`; }
       });
     });
   });
@@ -966,6 +968,7 @@ async function buildXlsx(){
           else if (c === 'L' && !classesOf(t.labels[s.si]).length) x.value = t.labels[s.si];
           else if (isGr) x.value = 'ΓΡ';
           if (s && t.grey[s.si]) x.fill = FILL('BFBFBF');
+          else if (r.entries.some(q => q.ti === ti && q.p0 === p && q.p !== q.p0)) { x.fill = FILL('FFFF00'); x.note = 'Κενό από τη συμπύκνωση'; }
         }
       }
       if (absent.has(ti)) notes.push('ΑΠΩΝ');
