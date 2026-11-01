@@ -139,6 +139,15 @@ tr.chg td.nm{color:var(--mv)}
 .warnbox b{color:inherit}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:9px;font-weight:600;max-width:calc(100% - 32px);z-index:50}
 .drop.over{outline:2px dashed var(--acc);outline-offset:6px;border-radius:14px}
+/* ροή: Συμπύκνωση → Εφημερίες → ΓΡ */
+.flow{margin-top:16px;padding:12px 14px;border-radius:12px;background:var(--acc-soft);display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.fsteps{list-style:none;margin:0;padding:0;display:flex;gap:6px;font-size:12.5px;font-weight:650;color:var(--muted)}
+.fsteps li{display:inline-flex;align-items:center;gap:5px}
+.fsteps li+li::before{content:'→';margin-right:2px;opacity:.6}
+.fsteps b{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--line);font-size:11px}
+.fsteps li.on{color:var(--ink)} .fsteps li.on b{background:var(--acc);color:var(--acc-ink)}
+.ftxt{margin:0;flex:1 1 240px;font-size:13.5px;color:var(--ink)}
+.fbtns{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
 @media (max-width:640px){
   .card{padding:14px}
   .dsel button{min-width:46px;padding:5px 6px}
@@ -156,7 +165,7 @@ tr.chg td.nm{color:var(--mv)}
 </style>
 </head>
 <body>
-<!-- ===== Μπάρα σουίτας: αρχική + εναλλαγή Εφημερίες ⇄ ΓΡ ⇄ Αναπληρώσεις ⇄ Συμπύκνωση (ίδιο κομμάτι σε όλες τις εφαρμογές) ===== -->
+<!-- ===== Μπάρα σουίτας: αρχική + εναλλαγή Συμπύκνωση ⇄ Εφημερίες ⇄ ΓΡ ⇄ Αναπληρώσεις (ίδιο κομμάτι σε όλες τις εφαρμογές) ===== -->
 <nav class="sbar" id="suiteBar" data-app="sy" aria-label="Εφαρμογές">
   <a class="sbar-home" href="../" title="Όλες οι εφαρμογές">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>
@@ -169,21 +178,21 @@ tr.chg td.nm{color:var(--mv)}
   </button>
   <button type="button" class="sbar-theme" id="sbarTheme" aria-label="Θέμα"></button>
   <div class="sbar-seg" role="group" aria-label="Εναλλαγή εφαρμογής">
-    <a class="sbar-opt ef" href="../efimeries/" data-to="ef">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 3v3.5M16 3v3.5"/></svg>
-      <span class="l">Εφημερίες</span><span class="s">Εφημ.</span>
-    </a>
-    <a class="sbar-opt gr" href="../gr/" data-to="gr">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M9 9v11.5M15 9v11.5"/></svg>
-      <span>ΓΡ</span>
-    </a>
-    <a class="sbar-opt an" href="../anaplirwseis/" data-to="an">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5h5M18.5 5v5"/></svg>
-      <span class="l">Αναπληρώσεις</span><span class="s">Αναπλ.</span>
-    </a>
     <a class="sbar-opt sy" href="../sympyknosi/" data-to="sy">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="13" height="17" rx="2.5"/><path d="M2.5 9.2h13M2.5 14.8h13M9 3.5v17"/><path d="M20 20.5V6.5M17 9.5l3-3 3 3"/></svg>
       <span class="l">Συμπύκνωση</span><span class="s">Συμπ.</span>
+    </a>
+<a class="sbar-opt ef" href="../efimeries/" data-to="ef">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 3v3.5M16 3v3.5"/></svg>
+      <span class="l">Εφημερίες</span><span class="s">Εφημ.</span>
+    </a>
+<a class="sbar-opt gr" href="../gr/" data-to="gr">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M9 9v11.5M15 9v11.5"/></svg>
+      <span>ΓΡ</span>
+    </a>
+<a class="sbar-opt an" href="../anaplirwseis/" data-to="an">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5h5M18.5 5v5"/></svg>
+      <span class="l">Αναπληρώσεις</span><span class="s">Αναπλ.</span>
     </a>
   </div>
   </div>
@@ -297,13 +306,16 @@ tr.chg td.nm{color:var(--mv)}
 <div class="wrap drop" id="drop">
   <header>
     <h1>Συμπύκνωση προγράμματος</h1>
-    <p>Δήλωσε ποιοι λείπουν και ποιες μέρες. Για εκείνη τη μέρα μόνο, τα μαθήματα ανεβαίνουν προς την 1η ώρα ώστε τα τμήματα να μη μένουν με κενά: πρώτα μετακινείται το μάθημα της τελευταίας ώρας, και μόνο αν ο καθηγητής του είναι ελεύθερος τη νέα ώρα.</p>
+    <p><b>Βήμα 1 της εβδομάδας.</b> Δήλωσε ποιοι λείπουν και ποιες μέρες. Για εκείνη τη μέρα μόνο, τα μαθήματα ανεβαίνουν προς την 1η ώρα ώστε τα τμήματα να μη μένουν με κενά: πρώτα μετακινείται το μάθημα της τελευταίας ώρας, και μόνο αν ο καθηγητής του είναι ελεύθερος τη νέα ώρα.</p>
   </header>
 
   <div class="card empty" id="empty" hidden>
     <h2>Δεν βρέθηκε ωρολόγιο πρόγραμμα</h2>
     <p class="sub">Αν το έχεις ανεβάσει στις Εφημερίες ή στο ΓΡ, το παίρνει αυτόματα από εκεί. Αλλιώς διάλεξε ή σύρε εδώ το αρχείο .xlsx.</p>
-    <label class="btn primary file-btn">Επιλογή αρχείου .xlsx<input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+    <div class="actions" style="justify-content:center">
+      <label class="btn primary file-btn">Επιλογή αρχείου .xlsx<input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+      <a class="btn" style="text-decoration:none" href="../efimeries/">Χωρίς συμπύκνωση → Εφημερίες</a>
+    </div>
   </div>
 
   <div id="main" hidden>
@@ -315,6 +327,17 @@ tr.chg td.nm{color:var(--mv)}
       </div>
       <ul class="abs" id="absList"></ul>
       <p class="sub" id="absNote" style="margin:10px 0 0">Πρόσθεσε όσους λείπουν και πάτα τις μέρες της απουσίας τους. Ο αριθμός κάτω από κάθε μέρα είναι οι ώρες μαθήματος εκείνη τη μέρα.</p>
+
+      <div class="flow no-print" id="flow">
+        <ol class="fsteps" aria-label="Σειρά εργασιών">
+          <li class="on"><b>1</b>Συμπύκνωση</li><li><b>2</b>Εφημερίες</li><li><b>3</b>ΓΡ</li>
+        </ol>
+        <p class="ftxt" id="flowTxt"></p>
+        <div class="fbtns">
+          <button class="btn ghost" id="skipBtn" type="button" hidden>Παράλειψη συμπύκνωσης</button>
+          <button class="btn primary" id="nextBtn" type="button">Συνέχεια στις Εφημερίες →</button>
+        </div>
+      </div>
 
       <details class="rules no-print" id="rules" style="margin-top:16px">
         <summary>Κανόνες <span id="rulesSum"></span></summary>
@@ -574,7 +597,9 @@ if (typeof module !== 'undefined') module.exports = { parseSheet, classesOf, com
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
-const K = { tt:'suite-timetable-v1', plan:'gr-plan-v1', draft:'sym-draft-v1' };
+// suite-timetable-v1: το πρόγραμμα που παίρνουν τα επόμενα βήματα (Εφημερίες → ΓΡ). Όταν το γράφει η Συμπύκνωση έχει from:'sy'.
+// sym-base-v1: το αρχικό (μη συμπυκνωμένο) πρόγραμμα, ώστε να μη συμπυκνώνεται ποτέ δεύτερη φορά.
+const K = { tt:'suite-timetable-v1', plan:'gr-plan-v1', draft:'sym-draft-v1', base:'sym-base-v1' };
 const ls = { get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { return false; } } };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const key = s => capsGr(s).replace(/\s+/g, ' ').trim();
@@ -588,31 +613,127 @@ const surname = n => String(n).split(' ')[0];
 const ord = p => p + 'η';
 
 // Κατάσταση: απόντες ως { name: [μέρες] }, καρφωμένα μαθήματα ως "μέρα|όνομα|ώρα", κανόνες.
-const A = { model:null, fname:'', grSrc:'', gr:null, absent:[], pins:new Set(), opts:{ useGR:true, notEarlier:false, keepDouble:false }, day:-1, view:'cls', res:{} };
+const A = { model:null, fname:'', baseAt:0, grSrc:'', gr:null, absent:[], pins:new Set(), opts:{ useGR:true, notEarlier:false, keepDouble:false }, day:-1, view:'cls', res:{} };
 
-/* ---------- πηγή: το κοινό πρόγραμμα της σουίτας (και τα ΓΡ, αν έχει γίνει κατανομή) ---------- */
+/* ---------- πηγή: το αρχικό πρόγραμμα της εβδομάδας ----------
+   Η Συμπύκνωση είναι το 1ο βήμα, άρα δουλεύει πάντα πάνω στο αρχικό πρόγραμμα (με όσα ΓΡ έχει το ίδιο το αρχείο),
+   όχι πάνω σε κατανομή ΓΡ ή σε πρόγραμμα που έχει ήδη συμπυκνώσει η ίδια. */
+const isCompactName = n => /συμπυκν/i.test(String(n || ''));
+function saveBase(fname, file, srcAt){ return ls.set(K.base, { fname, file, srcAt, at: Date.now() }); }
 async function loadSource(manual){
-  let buf = null, fname = '', plan = null;
-  if (manual) { buf = manual.buf; fname = manual.name; }
+  let buf = null, fname = '', baseAt = 0;
+  if (manual) { buf = manual.buf; fname = manual.name; baseAt = Date.now(); }
   else {
-    const pl = ls.get(K.plan), tt = ls.get(K.tt);
-    const planOk = pl && pl.file, ttOk = tt && tt.file;
-    if (planOk && (!ttOk || (pl.at || 0) >= (tt.at || 0) || pl.fname === tt.fname)) { buf = fromB64(pl.file); fname = pl.fname; plan = pl; }
-    else if (ttOk) { buf = fromB64(tt.file); fname = tt.fname; }
+    const tt = ls.get(K.tt), base = ls.get(K.base), pl = ls.get(K.plan);
+    if (tt && tt.file && tt.from !== 'sy') {           // νέο πρόγραμμα από τις Εφημερίες ή το ΓΡ
+      buf = fromB64(tt.file); fname = tt.fname; baseAt = tt.at || 0;
+      if (!base || base.srcAt !== baseAt) saveBase(fname, tt.file, baseAt);
+    } else if (base && base.file) { buf = fromB64(base.file); fname = base.fname; baseAt = base.srcAt || 0; }
+    else if (pl && pl.file && !isCompactName(pl.fname)) {   // παλιότερη συσκευή: μόνο κατανομή ΓΡ
+      buf = fromB64(pl.file); fname = pl.fname; baseAt = pl.at || 0; saveBase(fname, pl.file, baseAt);
+    }
   }
   if (!buf) { $('empty').hidden = false; $('main').hidden = true; return; }
   if (!window.ExcelJS) { toast('Η βιβλιοθήκη Excel δεν φόρτωσε — χρειάζεται σύνδεση την πρώτη φορά.'); return; }
   try {
     const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf.slice(0));
     const m = parseSheet(wb.worksheets[0]);
-    A.model = m; A.fname = fname;
-    if (plan && Array.isArray(plan.assign) && plan.assign.length === m.teachers.length) { A.gr = plan.assign.map(a => new Set(a)); A.grSrc = 'από την εφαρμογή ΓΡ'; }
-    else { A.gr = null; A.grSrc = m.teachers.some(t => t.cells.includes('G')) ? 'από το αρχείο' : 'κανένα'; }
-    if (manual) { try { localStorage.setItem(K.tt, JSON.stringify({ fname, at: Date.now(), from: 'sy', file: toB64(buf) })); } catch(e) { /* χωρίς χώρο: απλώς δεν μοιράζεται */ } }
+    A.model = m; A.fname = fname; A.baseAt = baseAt;
+    A.gr = null; A.grSrc = m.teachers.some(t => t.cells.includes('G')) ? 'από το αρχείο' : 'κανένα';
+    if (manual && !saveBase(fname, toB64(buf), baseAt)) toast('Δεν υπάρχει χώρος στη συσκευή για να περάσει το πρόγραμμα στις Εφημερίες.');
     $('empty').hidden = true; $('main').hidden = false;
     restoreDraft();
     fillSelect(); render();
+    if (manual) publish(true);
   } catch(e) { toast('Δεν διαβάστηκε το πρόγραμμα: ' + (e.message || e)); if (!A.model) { $('empty').hidden = false; $('main').hidden = true; } }
+}
+
+/* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
+function sigNow(){
+  const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort()]).sort();
+  return JSON.stringify([A.baseAt, abs, [...A.pins].sort(), A.opts]);
+}
+function compactName(fname, days){ return String(fname || 'Πρόγραμμα.xlsx').replace(/\.xlsx$/i, '') + ` (συμπύκνωση ${days.map(d => DSHORT[d]).join('-')}).xlsx`; }
+function syInfo(days){
+  return { days, dayNames: days.map(d => DAYS[d]), absent: Object.fromEntries(days.map(d => [DAYS[d], absentNames(d)])),
+    moved: days.reduce((n, d) => n + (A.res[d] ? A.res[d].moved.length : 0), 0), holes: days.reduce((n, d) => n + (A.res[d] ? A.res[d].holes.length : 0), 0) };
+}
+// Ίδιο αρχείο με το αρχικό· αλλάζουν μόνο τα κελιά των συμπυκνωμένων ημερών. Οι απόντες εκείνη τη μέρα μένουν κενοί και γκρι,
+// ώστε οι Εφημερίες να μην τους βάλουν σε βάρδια και το ΓΡ να τους θεωρεί εκτός.
+async function buildWeekXlsx(baseFile, days){
+  const m = A.model, wb = new ExcelJS.Workbook(); await wb.xlsx.load(fromB64(baseFile));
+  const ws = wb.worksheets[0];
+  const staffRows = new Set(m.teachers.filter(t => t.staff).map(t => t.row));
+  const tRows = new Set(m.teachers.filter(t => !t.staff).map(t => t.row));
+  days.forEach(d => {
+    const r = A.res[d]; if (!r) return;
+    const S = m.slots.map((s, si) => ({ ...s, si })).filter(s => s.day === d);
+    const cmin = Math.min(...S.map(s => s.col)), cmax = Math.max(...S.map(s => s.col));
+    const kept = [];
+    (ws.model.merges || []).slice().forEach(rg => {
+      const [a, b] = rg.split(':'), P1 = parseAddr(a), P2 = parseAddr(b || a);
+      if (P2.c < cmin || P1.c > cmax) return;
+      let staff = false, teach = false;
+      for (let rr = P1.r; rr <= P2.r; rr++) { if (staffRows.has(rr)) staff = true; if (tRows.has(rr)) teach = true; }
+      if (!teach) return;
+      if (staff || P1.c < cmin || P2.c > cmax) { kept.push({ r1: P1.r, c1: P1.c, r2: P2.r, c2: P2.c }); return; }
+      ws.unMergeCells(rg);
+    });
+    const inKept = (rr, cc) => kept.some(k => rr >= k.r1 && rr <= k.r2 && cc >= k.c1 && cc <= k.c2);
+    const absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti));
+    const byT = {}; r.entries.forEach(e => { (byT[e.ti] = byT[e.ti] || {})[e.p] = e; });
+    m.teachers.forEach((t, ti) => {
+      if (t.staff) return;
+      S.forEach(s => {
+        if (inKept(t.row, s.col)) return;
+        const cell = ws.getCell(t.row, s.col), c = t.cells[s.si];
+        if (absent.has(ti)) { cell.value = null; cell.fill = FILL('BFBFBF'); return; }
+        const e = byT[ti] && byT[ti][s.period];
+        if (e) {
+          cell.value = e.label;
+          if (e.p !== e.p0) { cell.fill = FILL('B2DFDB'); cell.note = `Συμπύκνωση: από την ${ord(e.p0)} ώρα`; }
+          return;
+        }
+        cell.value = c === 'G' ? GR : c === 'P' ? PAR : (c === 'L' && !classesOf(t.labels[s.si]).length) ? t.labels[s.si] : null;
+        if (c === 'L' && classesOf(t.labels[s.si]).length && !t.grey[s.si]) cell.fill = { type: 'pattern', pattern: 'none' };
+      });
+    });
+  });
+  return await wb.xlsx.writeBuffer();
+}
+let pubTimer = 0, pubRun = null;
+// force: γράψε το αρχικό πρόγραμμα ακόμα κι αν δεν υπάρχουν απουσίες (π.χ. μόλις ανέβηκε νέο αρχείο εδώ).
+async function publish(force){
+  clearTimeout(pubTimer);
+  if (pubRun) await pubRun.catch(() => {});
+  pubRun = (async () => {
+    if (!A.model) return false;
+    const base = ls.get(K.base);
+    if (!base || !base.file) { toast('Δεν υπάρχει χώρος στη συσκευή για να περάσει το πρόγραμμα στις Εφημερίες.'); return false; }
+    const days = activeDays().filter(d => A.res[d]), sig = sigNow(), tt = ls.get(K.tt);
+    const ttSy = tt && tt.from === 'sy' && tt.sy;
+    if (ttSy && tt.sy.sig === sig) return true;
+    if (!days.length && !force && !(ttSy && tt.sy.days.length)) return true;   // ήδη ισχύει το αρχικό πρόγραμμα
+    const rec = days.length
+      ? { fname: compactName(base.fname, days), at: Date.now(), from: 'sy', file: toB64(await buildWeekXlsx(base.file, days)), sy: Object.assign(syInfo(days), { sig }) }
+      : { fname: base.fname, at: Date.now(), from: 'sy', file: base.file, sy: { days: [], dayNames: [], absent: {}, sig } };
+    if (!ls.set(K.tt, rec)) { toast('Δεν χωράει το πρόγραμμα στη μνήμη της συσκευής — δεν πέρασε στις Εφημερίες.'); return false; }
+    return true;
+  })();
+  try { return await pubRun; } finally { pubRun = null; renderFlow(); }
+}
+function schedulePublish(){ clearTimeout(pubTimer); renderFlow(true); pubTimer = setTimeout(() => publish(), 700); }
+function renderFlow(pending){
+  if (!A.model) return;
+  const days = activeDays().filter(d => A.res[d]), tt = ls.get(K.tt);
+  const sent = !pending && tt && tt.from === 'sy' && tt.sy && tt.sy.sig === sigNow();
+  const holes = days.reduce((n, d) => n + A.res[d].holes.length, 0);
+  $('skipBtn').hidden = !A.absent.length;
+  $('nextBtn').textContent = days.length ? 'Συνέχεια στις Εφημερίες →' : 'Χωρίς συμπύκνωση → Εφημερίες';
+  $('flowTxt').innerHTML = days.length
+    ? `Οι Εφημερίες και το ΓΡ θα πάρουν το πρόγραμμα με συμπυκνωμένη ${days.length === 1 ? 'τη' : 'τις'} <b>${days.map(d => DAYS[d]).join(', ')}</b>· οι απόντες δεν μπαίνουν σε εφημερία εκείνες τις μέρες.` +
+      (holes ? ` <span style="color:var(--bad)">Μένουν ${holes} ${holes === 1 ? 'κενό' : 'κενά'} για αναπλήρωση.</span>` : '') + (sent ? ' <span style="color:var(--ok)">✓ Έτοιμο</span>' : '')
+    : 'Δεν λείπει κανείς; Οι Εφημερίες θα πάρουν το κανονικό πρόγραμμα της εβδομάδας.';
 }
 
 /* ---------- πρόχειρο ---------- */
@@ -672,7 +793,7 @@ function render(){
   compute();
   const days = activeDays();
   $('result').hidden = !days.length;
-  if (!days.length) { saveDraft(); return; }
+  if (!days.length) { saveDraft(); renderFlow(); return; }
   if (!days.includes(A.day)) A.day = days[0];
   $('tabs').innerHTML = days.map(d => {
     const r = A.res[d]; const h = r ? r.holes.length : 0;
@@ -680,7 +801,10 @@ function render(){
   }).join('');
   renderDay();
   saveDraft();
+  renderFlow();
 }
+// αλλαγή από τον χρήστη: ξαναϋπολογισμός και (λίγο μετά) ενημέρωση του προγράμματος για τις Εφημερίες
+function change(){ render(); schedulePublish(); }
 function absentNames(d){ return A.absent.filter(a => a.days.includes(d)).map(a => A.model.teachers[a.ti].name); }
 function renderDay(){
   const m = A.model, d = A.day, r = A.res[d];
@@ -893,20 +1017,20 @@ $('addAbs').addEventListener('change', e => {
   const ti = +e.target.value, nd = nextSchoolDay();
   A.absent.push({ ti, days: lessonsOn(ti, nd) ? [nd] : [] });
   if (lessonsOn(ti, nd)) A.day = nd;
-  fillSelect(); render();
+  fillSelect(); change();
 });
 $('absList').addEventListener('click', e => {
   const rm = e.target.closest('[data-rm]');
-  if (rm) { const ti = +rm.dataset.rm; A.absent = A.absent.filter(a => a.ti !== ti); fillSelect(); render(); return; }
+  if (rm) { const ti = +rm.dataset.rm; A.absent = A.absent.filter(a => a.ti !== ti); fillSelect(); change(); return; }
   const b = e.target.closest('button[data-d]'); if (!b) return;
   const a = A.absent.find(x => x.ti === +b.dataset.ti), d = +b.dataset.d; if (!a) return;
   a.days = a.days.includes(d) ? a.days.filter(x => x !== d) : a.days.concat(d).sort();
   if (a.days.includes(d)) A.day = d;
-  render();
+  change();
 });
-$('clearAbs').addEventListener('click', () => { if (!confirm('Να αφαιρεθούν όλοι οι απόντες και τα καρφωμένα μαθήματα;')) return; A.absent = []; A.pins = new Set(); fillSelect(); render(); });
+$('clearAbs').addEventListener('click', () => { if (!confirm('Να αφαιρεθούν όλοι οι απόντες και τα καρφωμένα μαθήματα;')) return; A.absent = []; A.pins = new Set(); fillSelect(); change(); });
 ['o-gr', 'o-early', 'o-double'].forEach(id => $(id).addEventListener('change', () => {
-  A.opts = { useGR: $('o-gr').checked, notEarlier: $('o-early').checked, keepDouble: $('o-double').checked }; render();
+  A.opts = { useGR: $('o-gr').checked, notEarlier: $('o-early').checked, keepDouble: $('o-double').checked }; change();
 }));
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; A.day = +b.dataset.day; render(); });
 document.querySelector('.seg').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; A.view = b.dataset.v; renderDay(); saveDraft(); });
@@ -916,7 +1040,7 @@ $('grid').addEventListener('click', e => {
   const k = pinKey(A.day, en);
   if (A.pins.has(k)) { A.pins.delete(k); toast('Ξεκαρφώθηκε'); }
   else { A.pins.add(k); toast(en.p !== en.p0 ? `Γύρισε στην ${ord(en.p0)} ώρα και μένει εκεί` : 'Καρφώθηκε στη θέση του'); }
-  render();
+  change();
 });
 $('xlsx').addEventListener('click', async () => {
   const b = $('xlsx'); b.disabled = true;
@@ -930,6 +1054,17 @@ $('copy').addEventListener('click', async () => {
   catch(e) { prompt('Αντέγραψε το κείμενο:', t); }
 });
 $('print').addEventListener('click', () => window.print());
+async function goEfimeries(){
+  const b = $('nextBtn'); b.disabled = true; b.textContent = 'Ετοιμασία…';
+  try { if (await publish()) location.href = '../efimeries/?from=sy'; }
+  catch(err) { toast('Σφάλμα: ' + (err.message || err)); }
+  finally { b.disabled = false; renderFlow(); }
+}
+$('nextBtn').addEventListener('click', goEfimeries);
+$('skipBtn').addEventListener('click', () => {
+  if (!confirm('Χωρίς συμπύκνωση αυτή την εβδομάδα; Αφαιρούνται οι απόντες και οι Εφημερίες παίρνουν το κανονικό πρόγραμμα.')) return;
+  A.absent = []; A.pins = new Set(); fillSelect(); render(); goEfimeries();
+});
 async function pickFile(f){ if (!f) return; if (!/\.xlsx$/i.test(f.name)) { toast('Χρειάζεται αρχείο .xlsx'); return; } await loadSource({ buf: await f.arrayBuffer(), name: f.name }); }
 $('file').addEventListener('change', async e => { await pickFile(e.target.files[0]); e.target.value = ''; });
 document.addEventListener('change', async e => { if (e.target.id === 'file2') { await pickFile(e.target.files[0]); e.target.value = ''; } });
@@ -937,7 +1072,7 @@ const drop = $('drop');
 ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => pickFile(e.dataTransfer.files[0]));
-window.addEventListener('storage', e => { if (e.key === K.plan || e.key === K.tt) loadSource(); });
+window.addEventListener('storage', e => { if (e.key === K.tt) { const t = ls.get(K.tt); if (t && t.from === 'sy') renderFlow(); else loadSource(); } });
 
 loadSource();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

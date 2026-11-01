@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Εφαρμογές Γιάννη Τσιμπινού</title>
-<meta name="description" content="Σουίτα εργαλείων για το σχολείο: Εφημερίες, Κατανομή ΓΡ και Αναπληρώσεις. Δημιουργός: Γιάννης Τσιμπινός.">
+<meta name="description" content="Σουίτα εργαλείων για το σχολείο: Συμπύκνωση, Εφημερίες, Κατανομή ΓΡ και Αναπληρώσεις. Δημιουργός: Γιάννης Τσιμπινός.">
 <meta name="theme-color" content="#0B3FA8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -78,6 +78,7 @@
   .open{margin-top:auto; font-weight:700; font-size:14.5px; color:var(--accent); display:inline-flex; align-items:center; gap:6px;}
   .tags{display:flex; flex-wrap:wrap; gap:6px;}
   .tag{font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:99px; background:var(--soft); color:var(--accent);}
+  .tag.step{background:var(--accent); color:var(--surface);}
   .install{margin:22px auto 0; display:none; text-align:center;}
   .install.show{display:block;}
   .install button{font:inherit; font-weight:700; font-size:14.5px; color:#fff; background:var(--blue-deep); border:0; border-radius:10px; padding:11px 18px; cursor:pointer;}
@@ -115,7 +116,7 @@
   <header class="hero" style="padding-top:12px">
     <img class="logo" alt="Λογότυπο — Γιάννης Τσιμπινός" width="112" height="112" src="logo.webp">
     <h1>Εργαλεία για το σχολείο</h1>
-    <p class="lead">Μικρές εφαρμογές που τρέχουν απευθείας στον browser σου. Διάλεξε ποια θες να ανοίξεις.</p>
+    <p class="lead">Μικρές εφαρμογές που τρέχουν απευθείας στον browser σου. Κάθε εβδομάδα: Συμπύκνωση → Εφημερίες → ΓΡ.</p>
   </header>
 
   <main>
@@ -131,11 +132,20 @@
       <div class="dlmsg" id="dlMsg" hidden></div>
     </section>
     <div class="grid">
+      <a class="card sy" href="sympyknosi/" data-app="sy">
+        <div class="card-top"><div class="ico" aria-hidden="true"><img src="sympyknosi/icon-192.png" alt="" width="56" height="56"></div></div>
+        <h2>Συμπύκνωση προγράμματος</h2>
+        <p>Ξεκινάς από εδώ: δηλώνεις ποιοι λείπουν και ποιες μέρες, τα μαθήματα ανεβαίνουν προς την 1η ώρα, και το συμπυκνωμένο πρόγραμμα περνά στις Εφημερίες και στο ΓΡ. Αν δεν λείπει κανείς, πας κατευθείαν στις Εφημερίες.</p>
+        <div class="tags"><span class="tag step">Βήμα 1</span><span class="tag">Πρόγραμμα → Excel ημέρας</span><span class="tag">Στον browser σου</span></div>
+        <div class="status" hidden></div>
+        <div class="sync" hidden></div>
+        <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
       <a class="card ef" href="efimeries/" data-app="ef">
         <div class="card-top"><div class="ico" aria-hidden="true"><img src="efimeries/icon-192.png" alt="" width="56" height="56"></div></div>
         <h2>Πίνακας Εφημεριών</h2>
         <p>Φτιάχνει το εβδομαδιαίο πρόγραμμα εφημεριών από το ωρολόγιο πρόγραμμα, με δίκαιη κατανομή και έλεγχο λαθών, και βγάζει έτοιμο έγγραφο Word.</p>
-        <div class="tags"><span class="tag">Excel → Word</span><span class="tag">Εγκαθίσταται</span><span class="tag">Συγχρονισμός συσκευών</span></div>
+        <div class="tags"><span class="tag step">Βήμα 2</span><span class="tag">Excel → Word</span><span class="tag">Εγκαθίσταται</span><span class="tag">Συγχρονισμός συσκευών</span></div>
         <div class="status" hidden></div>
         <div class="sync" hidden></div>
         <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
@@ -144,7 +154,7 @@
         <div class="card-top"><div class="ico" aria-hidden="true"><img src="gr/icon-192.png" alt="" width="56" height="56"></div></div>
         <h2>Κατανομή ΓΡ</h2>
         <p>Τοποθετεί τα ΓΡ στα κενά του ωρολογίου προγράμματος με βάση τους κανόνες του σχολείου, δείχνει τα εβδομαδιαία ΓΡ ανά εκπαιδευτικό και αποθηκεύει σε Excel.</p>
-        <div class="tags"><span class="tag">Excel → Excel</span><span class="tag">Στον browser σου</span></div>
+        <div class="tags"><span class="tag step">Βήμα 3</span><span class="tag">Excel → Excel</span><span class="tag">Στον browser σου</span></div>
         <div class="status" hidden></div>
         <div class="sync" hidden></div>
         <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
@@ -154,15 +164,6 @@
         <h2>Αναπληρώσεις</h2>
         <p>Δηλώνεις ποιοι λείπουν σήμερα και προτείνει ποιος καλύπτει κάθε ώρα: πρώτα όσοι έχουν ΓΡ, μετά όσοι έχουν κενό, με δίκαιη κατανομή μέσα στον μήνα. Βγάζει Word για ανάρτηση.</p>
         <div class="tags"><span class="tag">Πρόγραμμα + ΓΡ → Word</span><span class="tag">Ιστορικό μήνα</span></div>
-        <div class="status" hidden></div>
-        <div class="sync" hidden></div>
-        <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-      </a>
-      <a class="card sy" href="sympyknosi/" data-app="sy">
-        <div class="card-top"><div class="ico" aria-hidden="true"><img src="sympyknosi/icon-192.png" alt="" width="56" height="56"></div></div>
-        <h2>Συμπύκνωση προγράμματος</h2>
-        <p>Δηλώνεις ποιοι λείπουν και ποιες μέρες· για εκείνες τις μέρες τα μαθήματα ανεβαίνουν προς την 1η ώρα ώστε τα τμήματα να μη μένουν με κενά. Βγάζει Excel της ημέρας.</p>
-        <div class="tags"><span class="tag">Πρόγραμμα → Excel ημέρας</span><span class="tag">Στον browser σου</span></div>
         <div class="status" hidden></div>
         <div class="sync" hidden></div>
         <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
@@ -315,8 +316,10 @@
   if (!tt && !efHas && !grHas) return;           // τίποτα ακόμα σε αυτή τη συσκευή
   var week = document.getElementById('week'); week.hidden = false;
   var ttName = tt && tt.fname, grSame = !ttName || !gr || gr.fname === ttName;
+  var syOn = !!(tt && tt.from === 'sy' && tt.sy), syDays = syOn && tt.sy.dayNames ? tt.sy.dayNames : [];
   var steps = [
     { st: tt ? 'ok' : 'none', t: 'Ωρολόγιο πρόγραμμα', d: tt ? esc(tt.fname || 'αρχείο') + ' · ' + when(tt.at) : 'Ανέβασέ το σε μία από τις εφαρμογές' },
+    { st: syOn ? 'ok' : 'none', t: 'Συμπύκνωση', d: syOn ? (syDays.length ? 'Συμπυκνωμένες: ' + esc(syDays.join(', ')) : 'Χωρίς συμπύκνωση') + ' · ' + when(tt.at) : 'Δεν έχει γίνει (ή δεν χρειάζεται)' },
     { st: efHas ? (dlEf >= ((efs && efs.at) || 0) - 5000 && dlEf ? 'ok' : 'half') : 'none', t: 'Εφημερίες',
       d: efHas ? ((efs.payload.dateLabel ? 'Εβδομάδα ' + esc(efs.payload.dateLabel) + ' · ' : '') + (dlEf ? 'Word: ' + when(dlEf) : 'Το Word δεν έχει κατέβει')) : 'Δεν έχουν βγει ακόμα' },
     { st: grHas ? (!grSame ? 'bad' : dlGr && dlGr >= (gr.at || 0) - 5000 ? 'ok' : 'half') : 'none', t: 'ΓΡ',
@@ -327,7 +330,7 @@
   document.getElementById('steps').innerHTML = steps.map(function (s, i) {
     return '<li><span class="dot ' + s.st + '" aria-hidden="true">' + (MARK[s.st] || (i + 1)) + '</span><div><b>' + s.t + '</b><span class="t">' + s.d + '</span></div></li>';
   }).join('');
-  document.getElementById('weekSub').textContent = steps.slice(0, 3).every(function (s) { return s.st === 'ok'; }) ? 'Όλα έτοιμα για αυτή την εβδομάδα.' : 'Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή.';
+  document.getElementById('weekSub').textContent = [steps[0], steps[2], steps[3]].every(function (s) { return s.st === 'ok'; }) ? 'Όλα έτοιμα για αυτή την εβδομάδα.' : 'Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή.';
 
   // «Λήψη όλων»: φορτώνει αθόρυβα τις δύο εφαρμογές και ζητάει από την καθεμία το αρχείο της
   var btn = document.getElementById('dlAll'), msg = document.getElementById('dlMsg');
