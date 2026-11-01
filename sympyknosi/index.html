@@ -734,7 +734,7 @@ async function loadSource(manual){
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort()]).sort();
-  return JSON.stringify([A.baseAt, abs, A.edits, A.opts]);
+  return JSON.stringify([2, A.baseAt, abs, A.edits, A.opts]);   // 2: μορφή αρχείου χωρίς σημειώσεις
 }
 function compactName(fname, days){ return String(fname || 'Πρόγραμμα.xlsx').replace(/\.xlsx$/i, '') + ` (συμπύκνωση ${days.map(d => DSHORT[d]).join('-')}).xlsx`; }
 function syInfo(days){
@@ -774,13 +774,13 @@ async function buildWeekXlsx(baseFile, days){
         const e = byT[ti] && byT[ti][s.period];
         if (e) {
           cell.value = e.label;
-          if (e.p !== e.p0) { cell.fill = FILL('B2DFDB'); cell.note = `Συμπύκνωση: από την ${ord(e.p0)} ώρα`; }
+          if (e.p !== e.p0) cell.fill = FILL('B2DFDB');   // χωρίς σημειώσεις: μαζί με τις μπάρες δεδομένων του ΓΡ το Excel έβγαζε «πρόβλημα στο περιεχόμενο»
           return;
         }
         cell.value = c === 'G' ? GR : c === 'P' ? PAR : (c === 'L' && !classesOf(t.labels[s.si]).length) ? t.labels[s.si] : null;
         // κενό που δημιουργήθηκε: το μάθημα αυτής της ώρας ανέβηκε νωρίτερα → κίτρινο γέμισμα (μένει και στο Excel του ΓΡ)
         const up = c === 'L' && r.entries.find(x => x.ti === ti && x.p0 === s.period && x.p !== x.p0);
-        if (up) { cell.fill = FILL('FFFF00'); cell.note = `Συμπύκνωση: κενό — το ${up.label} ανέβηκε στην ${ord(up.p)} ώρα`; }
+        if (up) cell.fill = FILL('FFFF00');
       });
     });
   });
