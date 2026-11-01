@@ -1158,6 +1158,30 @@ async function buildXlsx(){
   [12, 32, 12, 10, 10, 30].forEach((w, i) => wa.getColumn(i + 1).width = w);
   return new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
+/* «Αποθήκευση ως»: ρωτά πού θα σωθεί το αρχείο (Chrome/Edge). Όπου δεν υποστηρίζεται, κατεβαίνει στις Λήψεις.
+   Το παράθυρο ανοίγει πριν φτιαχτεί το αρχείο, ώστε ο browser να το επιτρέψει· όλες οι εφαρμογές της σουίτας
+   μοιράζονται το ίδιο id, άρα θυμούνται τον τελευταίο φάκελο. Επιστρέφει 'saved' | 'downloaded' | 'cancelled'. */
+const SAVE_TYPES = {
+  xlsx: { description: 'Βιβλίο Excel', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } },
+  docx: { description: 'Έγγραφο Word', accept: { 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] } },
+  zip: { description: 'Αρχείο ZIP', accept: { 'application/zip': ['.zip'] } },
+  json: { description: 'Αρχείο JSON', accept: { 'application/json': ['.json'] } },
+};
+async function saveAs(name, make) {
+  const type = SAVE_TYPES[(String(name).match(/\.(\w+)$/) || [])[1]];
+  let handle = null;
+  if (typeof window.showSaveFilePicker === 'function' && window.self === window.top) {
+    try { handle = await window.showSaveFilePicker({ suggestedName: name, id: 'suite-save', types: type ? [type] : undefined }); }
+    catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; handle = null; }
+  }
+  const blob = await make();
+  if (handle) { try { const w = await handle.createWritable(); await w.write(blob); await w.close(); return 'saved'; } catch (e) { /* συνέχισε με απλή λήψη */ } }
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return 'downloaded';
+}
+const SAVE_MSG = { saved: 'Αποθηκεύτηκε', downloaded: 'Κατέβηκε στις Λήψεις', cancelled: 'Η αποθήκευση ακυρώθηκε' };
 function download(blob, name){
   const url = URL.createObjectURL(blob), a = document.createElement('a');
   a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
@@ -1219,7 +1243,7 @@ $('editBar').addEventListener('click', ev => {
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && A.sel) { A.sel = null; renderDay(); } });
 $('xlsx').addEventListener('click', async () => {
   const b = $('xlsx'); b.disabled = true;
-  try { const blob = await buildXlsx(); const ds = activeDays().map(d => DSHORT[d]).join('-'); download(blob, `Συμπύκνωση_${ds}.xlsx`); }
+  try { const name = `Συμπύκνωση_${activeDays().map(d => DSHORT[d]).join('-')}.xlsx`; const r = await saveAs(name, buildXlsx); toast(SAVE_MSG[r] + (r === 'cancelled' ? '' : ': ' + name)); }
   catch(err) { toast('Σφάλμα: ' + (err.message || err)); }
   finally { b.disabled = false; }
 });

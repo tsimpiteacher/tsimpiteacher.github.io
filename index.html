@@ -357,7 +357,17 @@
     return window.JSZip ? Promise.resolve() : new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
   }
   function save(blob, name) { var u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 60000); return u; }
+  function zipName() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return 'Εβδομάδα_' + p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear() + '.zip'; }
+  // «Αποθήκευση ως»: ρωτά πρώτα πού θα σωθεί το .zip (Chrome/Edge)· όπου δεν υποστηρίζεται, κατεβαίνει στις Λήψεις.
+  function pickZip() {
+    if (typeof window.showSaveFilePicker !== 'function') return Promise.resolve(null);
+    return window.showSaveFilePicker({ suggestedName: zipName(), id: 'suite-save', types: [{ description: 'Αρχείο ZIP', accept: { 'application/zip': ['.zip'] } }] })
+      .catch(function (e) { if (e && e.name === 'AbortError') throw e; return null; });
+  }
   btn.addEventListener('click', function () {
+    var handle = null;
+    pickZip().then(function (h) { handle = h; run(); }, function () { msg.textContent = 'Η αποθήκευση ακυρώθηκε.'; msg.hidden = false; });
+    function run() {
     btn.disabled = true; btn.querySelector('span').textContent = 'Ετοιμασία…'; msg.hidden = true;
     var jobs = [efHas ? frame('efimeries/') : null, grHas ? frame('gr/') : null];
     Promise.all(jobs.map(function (j) { return j ? j.then(function (x) { return x; }, function (e) { return { err: e }; }) : null; })).then(function (res) {
@@ -374,13 +384,17 @@
         return z.generateAsync({ type: 'blob' });
       }, function () { return null; }).then(function (zip) {
         var links = files.map(function (f) { var u = URL.createObjectURL(f.blob); setTimeout(function () { URL.revokeObjectURL(u); }, 600000); return '<a href="' + u + '" download="' + esc(f.filename) + '">' + esc(f.filename) + '</a>'; });
-        var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
-        if (zip) save(zip, 'Εβδομάδα_' + p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear() + '.zip');
-        msg.innerHTML = (zip ? 'Κατέβηκε ένα .zip με ' + files.length + ' αρχεία. ' : '') + 'Ξεχωριστά: ' + links.join(' · ') + (errs.length ? '<br>⚠ ' + esc(errs.join(' · ')) : '');
-        msg.hidden = false;
+        var write = !zip ? Promise.resolve('') : handle
+          ? handle.createWritable().then(function (w) { return w.write(zip).then(function () { return w.close(); }); }).then(function () { return 'Αποθηκεύτηκε ένα .zip με ' + files.length + ' αρχεία. '; }, function () { save(zip, zipName()); return 'Κατέβηκε ένα .zip με ' + files.length + ' αρχεία. '; })
+          : Promise.resolve((save(zip, zipName()), 'Κατέβηκε ένα .zip με ' + files.length + ' αρχεία. '));
+        return write.then(function (t) {
+          msg.innerHTML = t + 'Ξεχωριστά: ' + links.join(' · ') + (errs.length ? '<br>⚠ ' + esc(errs.join(' · ')) : '');
+          msg.hidden = false;
+        });
       });
     }).catch(function (e) { msg.textContent = '⚠ ' + (e.message || e); msg.hidden = false; })
       .then(function () { btn.disabled = false; btn.querySelector('span').textContent = 'Λήψη όλων'; });
+    }
   });
 })();
 </script>
