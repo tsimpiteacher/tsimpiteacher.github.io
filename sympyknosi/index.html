@@ -728,13 +728,15 @@ async function loadSource(manual){
     restoreDraft();
     fillSelect(); render();
     if (manual) publish(true);
+    else { const t = ls.get(K.tt); let v = 0; try { v = t && t.from === 'sy' && t.sy && t.sy.sig ? JSON.parse(t.sy.sig)[0] : SIGV; } catch(e) {} if (v !== SIGV && t.sy.days && t.sy.days.length) publish(); }
   } catch(e) { toast('Δεν διαβάστηκε το πρόγραμμα: ' + (e.message || e)); if (!A.model) { $('empty').hidden = false; $('main').hidden = true; } }
 }
 
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
+const SIGV = 3;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort()]).sort();
-  return JSON.stringify([2, A.baseAt, abs, A.edits, A.opts]);   // 2: μορφή αρχείου χωρίς σημειώσεις
+  return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts]);
 }
 function compactName(fname, days){ return String(fname || 'Πρόγραμμα.xlsx').replace(/\.xlsx$/i, '') + ` (συμπύκνωση ${days.map(d => DSHORT[d]).join('-')}).xlsx`; }
 function syInfo(days){
@@ -743,6 +745,9 @@ function syInfo(days){
 }
 // Ίδιο αρχείο με το αρχικό· αλλάζουν μόνο τα κελιά των συμπυκνωμένων ημερών. Οι απόντες εκείνη τη μέρα μένουν κενοί και γκρι,
 // ώστε οι Εφημερίες να μην τους βάλουν σε βάρδια και το ΓΡ να τους θεωρεί εκτός.
+// Το ExcelJS μοιράζει το ίδιο αντικείμενο μορφοποίησης σε όλα τα κελιά με ίδιο στυλ: αλλάζοντας cell.fill άλλαζαν
+// και όλα τα «αδέρφια» του (π.χ. όλη η 1η ώρα γινόταν πράσινη). Κάθε κελί παίρνει δικό του αντίγραφο.
+function paint(cell, argb){ cell.style = Object.assign({}, cell.style, { fill: FILL(argb) }); }
 async function buildWeekXlsx(baseFile, days){
   const m = A.model, wb = new ExcelJS.Workbook(); await wb.xlsx.load(fromB64(baseFile));
   const ws = wb.worksheets[0];
@@ -770,17 +775,17 @@ async function buildWeekXlsx(baseFile, days){
       S.forEach(s => {
         if (inKept(t.row, s.col)) return;
         const cell = ws.getCell(t.row, s.col), c = t.cells[s.si];
-        if (absent.has(ti)) { cell.value = null; cell.fill = FILL('BFBFBF'); return; }
+        if (absent.has(ti)) { cell.value = null; paint(cell, 'BFBFBF'); return; }   // απών: γκρι όλη η μέρα
         const e = byT[ti] && byT[ti][s.period];
         if (e) {
           cell.value = e.label;
-          if (e.p !== e.p0) cell.fill = FILL('B2DFDB');   // χωρίς σημειώσεις: μαζί με τις μπάρες δεδομένων του ΓΡ το Excel έβγαζε «πρόβλημα στο περιεχόμενο»
+          if (e.p !== e.p0) paint(cell, 'B2DFDB');   // χωρίς σημειώσεις: μαζί με τις μπάρες δεδομένων του ΓΡ το Excel έβγαζε «πρόβλημα στο περιεχόμενο»
           return;
         }
         cell.value = c === 'G' ? GR : c === 'P' ? PAR : (c === 'L' && !classesOf(t.labels[s.si]).length) ? t.labels[s.si] : null;
         // κενό που δημιουργήθηκε: το μάθημα αυτής της ώρας ανέβηκε νωρίτερα → κίτρινο γέμισμα (μένει και στο Excel του ΓΡ)
         const up = c === 'L' && r.entries.find(x => x.ti === ti && x.p0 === s.period && x.p !== x.p0);
-        if (up) cell.fill = FILL('FFFF00');
+        if (up) paint(cell, 'FFFF00');
       });
     });
   });
