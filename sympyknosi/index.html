@@ -733,7 +733,7 @@ async function loadSource(manual){
 }
 
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
-const SIGV = 3;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
+const SIGV = 4;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort()]).sort();
   return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts]);
@@ -779,7 +779,7 @@ async function buildWeekXlsx(baseFile, days){
         const e = byT[ti] && byT[ti][s.period];
         if (e) {
           cell.value = e.label;
-          if (e.p !== e.p0) paint(cell, 'B2DFDB');   // χωρίς σημειώσεις: μαζί με τις μπάρες δεδομένων του ΓΡ το Excel έβγαζε «πρόβλημα στο περιεχόμενο»
+          // χρώματα μόνο: γκρι = απών, κίτρινο = κενό που δημιουργήθηκε (τα μετακινημένα μένουν χωρίς χρώμα)
           return;
         }
         cell.value = c === 'G' ? GR : c === 'P' ? PAR : (c === 'L' && !classesOf(t.labels[s.si]).length) ? t.labels[s.si] : null;
@@ -1095,12 +1095,12 @@ async function buildXlsx(){
     const ws = wb.addWorksheet(DAYS[d], { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .4, right: .4, top: .5, bottom: .5, header: .2, footer: .2 } }, views: [{ state: 'frozen', xSplit: 2, ySplit: 5 }] });
     ws.getCell(1, 1).value = school || 'Ωρολόγιο πρόγραμμα';
     ws.getCell(2, 1).value = `Συμπυκνωμένο πρόγραμμα ${GEN[d]} · Απόντες: ${absentNames(d).join(', ') || '—'}`;
-    ws.getCell(1, 1).font = { bold: true, size: 13 }; ws.getCell(2, 1).font = { bold: true, size: 11, color: { argb: 'FF00695C' } };
+    ws.getCell(1, 1).font = { bold: true, size: 13 }; ws.getCell(2, 1).font = { bold: true, size: 11 };
     ws.getCell(4, 1).value = 'ΕΚΠΑΙΔΕΥΤΙΚΟΣ'; ws.getCell(4, 2).value = 'ΕΙΔΙΚΟΤΗΤΑ';
     ws.getCell(4, 3).value = DAYS[d]; ws.mergeCells(4, 3, 4, 2 + P);
     ws.getCell(4, 3 + P).value = 'ΣΗΜΕΙΩΣΗ';
     for (let p = 1; p <= P; p++) ws.getCell(5, 2 + p).value = p;
-    [4, 5].forEach(rr => { for (let c = 1; c <= 3 + P; c++) { const x = ws.getCell(rr, c); x.font = { bold: true }; x.alignment = { horizontal: 'center', vertical: 'middle' }; x.fill = FILL('DCEFEC'); x.border = BORDER; } });
+    [4, 5].forEach(rr => { for (let c = 1; c <= 3 + P; c++) { const x = ws.getCell(rr, c); x.font = { bold: true }; x.alignment = { horizontal: 'center', vertical: 'middle' }; x.border = BORDER; } });
     ws.getColumn(1).width = 30; ws.getColumn(2).width = 11; for (let p = 1; p <= P; p++) ws.getColumn(2 + p).width = 9; ws.getColumn(3 + P).width = 44;
     const byT = {}; r.entries.forEach(e => { (byT[e.ti] = byT[e.ti] || {})[e.p] = e; });
     const S = m.slots.map((s, si) => ({ ...s, si })).filter(s => s.day === d);
@@ -1115,7 +1115,7 @@ async function buildXlsx(){
         const e = byT[ti] && byT[ti][p];
         if (e) {
           x.value = e.label;
-          if (e.p !== e.p0) { x.fill = FILL('B2DFDB'); x.font = { bold: true, color: { argb: 'FF004D40' } }; x.note = `Από την ${ord(e.p0)} ώρα`; notes.push(`${e.label} ${ord(e.p0)}→${ord(e.p)}`); }
+          if (e.p !== e.p0) { x.note = `Από την ${ord(e.p0)} ώρα`; notes.push(`${e.label} ${ord(e.p0)}→${ord(e.p)}`); }
         } else {
           const s = S.find(s => s.period === p), c = s ? t.cells[s.si] : 'F';
           const isGr = A.gr && A.gr[ti] ? A.gr[ti].has(s && s.si) : c === 'G';
@@ -1127,7 +1127,7 @@ async function buildXlsx(){
         }
       }
       if (absent.has(ti)) notes.push('ΑΠΩΝ');
-      const nc = ws.getCell(row, 3 + P); nc.value = notes.join(' · '); nc.border = BORDER; if (notes.length) nc.font = { bold: true, color: { argb: absent.has(ti) ? 'FFB3261E' : 'FF004D40' } };
+      const nc = ws.getCell(row, 3 + P); nc.value = notes.join(' · '); nc.border = BORDER; if (notes.length) nc.font = { bold: true };
       ws.getCell(row, 1).border = BORDER; ws.getCell(row, 2).border = BORDER;
       if (notes.length) ws.getCell(row, 1).font = { bold: true };
       row++;
@@ -1139,26 +1139,24 @@ async function buildXlsx(){
     wc.getCell(3, 1).value = 'ΤΜΗΜΑ';
     for (let p = 1; p <= P; p++) wc.getCell(3, 1 + p).value = ord(p);
     wc.getCell(3, 2 + P).value = 'ΣΧΟΛΑΕΙ';
-    for (let c = 1; c <= 2 + P; c++) { const x = wc.getCell(3, c); x.font = { bold: true }; x.fill = FILL('DCEFEC'); x.border = BORDER; x.alignment = { horizontal: 'center' }; }
+    for (let c = 1; c <= 2 + P; c++) { const x = wc.getCell(3, c); x.font = { bold: true }; x.border = BORDER; x.alignment = { horizontal: 'center' }; }
     wc.getColumn(1).width = 10; for (let p = 1; p <= P; p++) wc.getColumn(1 + p).width = 22; wc.getColumn(2 + P).width = 16;
     const holes = new Set(r.holes.map(x => `${x.c}|${x.p}`));
     r.classes.forEach((c, i) => {
       const rr = 4 + i; wc.getCell(rr, 1).value = c; wc.getCell(rr, 1).font = { bold: true }; wc.getCell(rr, 1).border = BORDER;
       for (let p = 1; p <= P; p++) {
         const x = wc.getCell(rr, 1 + p), es = r.at(c, p); x.border = BORDER; x.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-        if (es.length) { x.value = es.map(e => surname(m.teachers[e.ti].name) + (e.p !== e.p0 ? ` (από ${ord(e.p0)})` : '')).join(' / '); if (es.some(e => e.p !== e.p0)) { x.fill = FILL('B2DFDB'); x.font = { bold: true, color: { argb: 'FF004D40' } }; } }
-        else if (holes.has(`${c}|${p}`)) { x.value = 'ΚΕΝΟ'; x.fill = FILL('F8D7D4'); x.font = { bold: true, color: { argb: 'FFB3261E' } }; }
-        else if (p > r.newLast[c]) x.fill = FILL('F1F4F4');
+        if (es.length) { x.value = es.map(e => surname(m.teachers[e.ti].name) + (e.p !== e.p0 ? ` (από ${ord(e.p0)})` : '')).join(' / '); }
+        else if (holes.has(`${c}|${p}`)) { x.value = 'ΚΕΝΟ'; x.fill = FILL('FFFF00'); x.font = { bold: true }; }   // μόνο κίτρινο για κενό
       }
       const z = wc.getCell(rr, 2 + P); z.value = `μετά την ${ord(r.newLast[c])}` + (r.newLast[c] < r.origLast[c] ? ` (αντί ${ord(r.origLast[c])})` : ''); z.border = BORDER;
-      if (r.newLast[c] < r.origLast[c]) z.font = { bold: true, color: { argb: 'FF2E7D4F' } };
     });
     const cm = changeModel(r);
     Object.keys(cm.byTeacher).map(Number).forEach(ti => cm.byTeacher[ti].forEach(x => all.push([DAYS[d], m.teachers[ti].name, x.label, ord(x.from), ord(x.to), x.tags.map(t => TAGTXT[t]).join(', ')])));
     cm.holes.forEach(x => all.push([DAYS[d], '—', x.c, ord(x.p), '', 'Κενό για αναπλήρωση']));
   });
   const wa = wb.addWorksheet('Αλλαγές', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-  wa.addRow(['Ημέρα', 'Εκπαιδευτικός', 'Τμήμα', 'Από ώρα', 'Σε ώρα', 'Σημείωση']).eachCell(x => { x.font = { bold: true }; x.fill = FILL('DCEFEC'); x.border = BORDER; });
+  wa.addRow(['Ημέρα', 'Εκπαιδευτικός', 'Τμήμα', 'Από ώρα', 'Σε ώρα', 'Σημείωση']).eachCell(x => { x.font = { bold: true }; x.border = BORDER; });
   all.forEach(a => wa.addRow(a).eachCell(x => { x.border = BORDER; }));
   [12, 32, 12, 10, 10, 30].forEach((w, i) => wa.getColumn(i + 1).width = w);
   return new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
