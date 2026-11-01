@@ -121,6 +121,12 @@ td.Gr{color:var(--gr);font-weight:700}
 td.Bz{color:var(--muted);font-size:11px}
 td.pick{cursor:pointer}
 td.pick:hover{box-shadow:inset 0 0 0 2px var(--acc)}
+td.sel{box-shadow:inset 0 0 0 3px var(--ink)!important}
+td.tgt{cursor:pointer;box-shadow:inset 0 0 0 2px var(--acc);background-image:linear-gradient(var(--acc-soft),var(--acc-soft))}
+td.tgt:hover{box-shadow:inset 0 0 0 3px var(--acc)}
+.editbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:9px 12px;border-radius:10px;background:var(--soft);font-size:13.5px;margin:0 0 10px}
+.editbar .t{flex:1 1 220px}
+.editbar .btn{min-height:34px;padding:6px 11px;font-size:13px}
 td.pin::after{content:'';position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--ink);opacity:.6}
 tr.absrow td.nm{color:var(--bad)}
 tr.chg td.nm{color:var(--mv)}
@@ -306,7 +312,7 @@ tr.chg td.nm{color:var(--mv)}
 <div class="wrap drop" id="drop">
   <header>
     <h1>Συμπύκνωση προγράμματος</h1>
-    <p><b>Βήμα 1 της εβδομάδας.</b> Δήλωσε ποιοι λείπουν και ποιες μέρες. Για εκείνη τη μέρα μόνο, τα μαθήματα ανεβαίνουν προς την 1η ώρα ώστε τα τμήματα να μη μένουν με κενά: πρώτα μετακινείται το μάθημα της τελευταίας ώρας, και μόνο αν ο καθηγητής του είναι ελεύθερος τη νέα ώρα.</p>
+    <p><b>Βήμα 1 της εβδομάδας.</b> Δήλωσε ποιοι λείπουν και ποιες μέρες. Για εκείνη τη μέρα μόνο, τα μαθήματα ανεβαίνουν προς την 1η ώρα και, όπου χρειάζεται, ανταλλάσσονται, ώστε τα τμήματα να μη μένουν με κενά — πάντα μόνο αν ο καθηγητής είναι ελεύθερος τη νέα ώρα, χωρίς κανένα τμήμα να σχολάει ή κανέναν καθηγητή να φεύγει αργότερα. Μπορείς να αλλάξεις και με το χέρι ό,τι θέλεις.</p>
   </header>
 
   <div class="card empty" id="empty" hidden>
@@ -357,6 +363,7 @@ tr.chg td.nm{color:var(--mv)}
             <h2 id="dayTitle" style="margin:0">—</h2>
             <div class="seg no-print" role="group" aria-label="Προβολή"><button type="button" data-v="cls" aria-pressed="true">Τμήματα</button><button type="button" data-v="tch" aria-pressed="false">Καθηγητές</button></div>
           </div>
+          <div class="editbar no-print" id="editBar" hidden></div>
           <div class="chips" id="chips"></div>
           <div class="legend" id="legend" style="margin-top:10px"></div>
           <div class="scroll"><table class="g" id="grid"></table></div>
@@ -481,14 +488,17 @@ function rand(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>
 
 /*
  * Συμπύκνωση μιας ημέρας.
- *   ctx.absent : Set με δείκτες απόντων εκπαιδευτικών
- *   ctx.gr     : πίνακας (ανά εκπαιδευτικό) με Set θέσεων ΓΡ — αν λείπει, από το αρχείο
- *   ctx.opts   : { useGR, notEarlier, keepDouble }
- *   ctx.pins   : Set με id μαθημάτων που μένουν όπου είναι
- * Κανόνες: ένα μάθημα ανεβαίνει μόνο σε πιο νωρίς ώρα, μόνο αν όλοι οι καθηγητές του είναι ελεύθεροι τότε
- * και όλα τα τμήματά του άδεια. Για κάθε κενό (από την 1η ώρα προς τα κάτω) προτιμά το μάθημα της πιο
- * αργής ώρας. Δοκιμάζει πολλές σειρές και κρατά αυτή με τα λιγότερα κενά, τα νωρίτερα σχολάσματα και τις
- * λιγότερες μετακινήσεις.
+ *   ctx.absent  : Set με δείκτες απόντων εκπαιδευτικών
+ *   ctx.gr      : πίνακας (ανά εκπαιδευτικό) με Set θέσεων ΓΡ — αν λείπει, από το αρχείο
+ *   ctx.opts    : { useGR, notEarlier, keepDouble }
+ *   ctx.pins    : Set με id μαθημάτων που ο αλγόριθμος δεν μετακινεί
+ *   ctx.layout  : { id: ώρα } — χειροκίνητη διάταξη της ημέρας· χρησιμοποιείται όπως είναι
+ *   ctx.improve : μαζί με layout — γέμισε κενά ξεκινώντας από τη διάταξη (τα pins μένουν)
+ * Κανόνες: ένα μάθημα αλλάζει ώρα μόνο αν όλοι οι καθηγητές του είναι ελεύθεροι τότε και όλα τα τμήματά του άδεια·
+ * κανένα τμήμα δεν αρχίζει νωρίτερα ή σχολάει αργότερα από ό,τι είχε, κανείς καθηγητής δεν φεύγει αργότερα.
+ *   1) Άπληστο πέρασμα: για κάθε κενό (από την 1η ώρα) ανεβαίνει το μάθημα της πιο αργής ώρας· πολλές σειρές.
+ *   2) Βελτίωση: τυχαίες μετακινήσεις και ανταλλαγές (και προς τα κάτω), ώστε να κλείσουν κενά που το 1) άφησε.
+ * Κρατά τη λύση με τα λιγότερα κενά, μετά τα νωρίτερα σχολάσματα, μετά τις λιγότερες αλλαγές.
  */
 function compactDay(model, d, ctx) {
   const opts = ctx.opts || {}, pins = ctx.pins || new Set(), absent = ctx.absent || new Set();
@@ -496,10 +506,10 @@ function compactDay(model, d, ctx) {
   if (!S.length) return null;
   const P = Math.max(...S.map(s => s.period));
   const base = {};            // base[ti][p]: 0 ελεύθερος, 1 ΓΡ, 2 δεσμευμένος (ΓΟΝ, γκρι, άλλη υποχρέωση)
-  const lessons = [], removed = [], unknown = [], grLost = [];
+  const lessons = [], removed = [], unknown = [];
   model.teachers.forEach((t, ti) => {
     if (t.staff) return;
-    const row = new Array(P + 1).fill(0);
+    const row = new Array(P + 2).fill(0);
     S.forEach(s => {
       const si = s.si, p = s.period, c = t.cells[si];
       const isGr = ctx.gr && ctx.gr[ti] ? ctx.gr[ti].has(si) : c === 'G';
@@ -519,12 +529,13 @@ function compactDay(model, d, ctx) {
     start[c] = Math.min(start[c] || 99, e.p0); origLast[c] = Math.max(origLast[c] || 0, e.p0);
   }));
   const classes = Object.keys(start).sort(clsSort);
-  const firstT = {};
-  lessons.forEach(e => { firstT[e.ti] = Math.min(firstT[e.ti] || 99, e.p0); });
+  const firstT = {}, lastT = {};
+  lessons.forEach(e => { firstT[e.ti] = Math.min(firstT[e.ti] || 99, e.p0); lastT[e.ti] = Math.max(lastT[e.ti] || 0, e.p0); });
+  const fixedOf = x => pins.has(x.id) || (opts.keepDouble && !!x.span);
 
-  function attempt(seed, natural) {
-    const rnd = rand(seed);
-    const st = lessons.map(e => ({ ...e }));
+  // Κατάσταση πλέγματος: ποιο μάθημα είναι πού. pos[i] = ώρα του lessons[i] (αλλιώς η αρχική).
+  function State(pos) {
+    const st = lessons.map((e, i) => ({ ...e, p: pos ? pos[i] : e.p0 }));
     const tAt = {}, cAt = {};
     const add = e => { (tAt[e.ti] = tAt[e.ti] || new Array(P + 2).fill(0))[e.p]++; e.cls.forEach(c => ((cAt[c] = cAt[c] || [])[e.p] = cAt[c][e.p] || []).push(e)); };
     const del = e => { tAt[e.ti][e.p]--; e.cls.forEach(c => { const a = cAt[c][e.p]; a.splice(a.indexOf(e), 1); }); };
@@ -536,60 +547,132 @@ function compactDay(model, d, ctx) {
       while (q.length) { const x = q.pop(); x.cls.forEach(c => at(c, x.p).forEach(y => { if (!seen.has(y)) { seen.add(y); q.push(y); } })); }
       return [...seen];
     };
+    return { st, tAt, add, del, at, lastOf, blockOf };
+  }
+  // Χωράει το block (ήδη βγαλμένο από το πλέγμα) στην ώρα p;
+  function fits(G, blk, p) {
+    if (p < 1 || p > P) return false;
+    for (const x of blk) for (const c of x.cls) if (G.at(c, p).length || p < start[c] || p > origLast[c]) return false;
+    for (const x of blk) {
+      const ti = x.ti, b = base[ti][p];
+      if ((G.tAt[ti] && G.tAt[ti][p]) || b === 2 || (b === 1 && !opts.useGR) || (opts.notEarlier && p < firstT[ti]) || p > lastT[ti]) return false;
+    }
+    return true;
+  }
+  function measure(G) {
+    let holes = 0, endSum = 0, moved = 0, down = 0, early = 0, grUse = 0;
+    const holeList = [];
+    classes.forEach(c => {
+      const L = G.lastOf(c); endSum += L;
+      for (let p = start[c]; p < L; p++) if (!G.at(c, p).length) { holes++; holeList.push({ c, p }); }
+    });
+    G.st.forEach(e => { if (e.p !== e.p0) { moved++; if (e.p > e.p0) down++; if (e.p < firstT[e.ti]) early++; if (base[e.ti][e.p] === 1) grUse++; } });
+    return { holes, holeList, endSum, moved, down, early, grUse, key: [holes, endSum, moved, down, early, grUse] };
+  }
+  const better = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
+  const energy = m => m.holes * 40 + m.endSum * 6 + m.moved * 2 + m.down * 2 + m.early + m.grUse;
+
+  // 1) άπληστο πέρασμα
+  function greedy(seed, natural) {
+    const rnd = rand(seed), G = State();
     const tie = {}; model.teachers.forEach((t, ti) => tie[ti] = natural ? ti / 1e4 : rnd());
     const order = natural ? classes.slice() : classes.slice().sort(() => rnd() - 0.5);
-    const moves = [];
     for (let p = 1; p < P; p++) {
       for (const c of order) {
-        if (p < start[c] || at(c, p).length) continue;
-        const last = lastOf(c);
+        if (p < start[c] || G.at(c, p).length) continue;
+        const last = G.lastOf(c);
         if (last <= p) continue;
         const cands = [], seenB = new Set();
         for (let q = last; q > p; q--) {
-          for (const e of at(c, q)) {
-            const blk = blockOf(e), k = blk.map(x => x.id).sort().join(',');
+          for (const e of G.at(c, q)) {
+            const blk = G.blockOf(e), k = blk.map(x => x.id).sort().join(',');
             if (seenB.has(k)) continue; seenB.add(k);
-            if (blk.some(x => pins.has(x.id) || (opts.keepDouble && x.span))) continue;
-            const bc = [...new Set(blk.flatMap(x => x.cls))], bt = [...new Set(blk.map(x => x.ti))];
-            if (bc.some(cl => at(cl, p).length)) continue;
-            if (bt.some(ti => (tAt[ti] && tAt[ti][p]) || base[ti][p] === 2 || (base[ti][p] === 1 && !opts.useGR) || (opts.notEarlier && p < firstT[ti]))) continue;
-            const early = bt.filter(ti => p < firstT[ti]).length, grc = bt.filter(ti => base[ti][p] === 1).length;
-            cands.push({ blk, q, early, grc, r: Math.min(...bt.map(ti => tie[ti])) });
+            if (blk.some(fixedOf)) continue;
+            blk.forEach(G.del); const ok = fits(G, blk, p); blk.forEach(G.add);
+            if (!ok) continue;
+            const bt = [...new Set(blk.map(x => x.ti))];
+            cands.push({ blk, q, early: bt.filter(ti => p < firstT[ti]).length, grc: bt.filter(ti => base[ti][p] === 1).length, r: Math.min(...bt.map(ti => tie[ti])) });
           }
         }
         if (!cands.length) continue;
         cands.sort((a, b) => b.q - a.q || a.early - b.early || a.grc - b.grc || a.r - b.r);
-        const best = cands[0];
-        best.blk.forEach(x => { del(x); x.p = p; add(x); });
-        moves.push(best);
+        cands[0].blk.forEach(x => { G.del(x); x.p = p; G.add(x); });
       }
     }
-    // αποτίμηση
-    let holes = 0, endSum = 0;
-    const holeList = [];
-    classes.forEach(c => {
-      const L = lastOf(c); endSum += L;
-      for (let p = start[c]; p < L; p++) if (!at(c, p).length) { holes++; holeList.push({ c, p }); }
-    });
-    const moved = st.filter(e => e.p !== e.p0);
-    const early = moved.filter(e => e.p < firstT[e.ti]).length;
-    const grUse = moved.filter(e => base[e.ti][e.p] === 1).length;
-    return { st, holes, holeList, endSum, nMoved: moved.length, early, grUse, lastOf, at };
+    return G;
   }
-  const tries = ctx.attempts || 60;
-  let best = null;
-  for (let a = 0; a < tries; a++) {
-    const r = attempt(9973 * (a + 1) + d * 31, a === 0);
-    if (!best || [r.holes - best.holes, r.endSum - best.endSum, r.nMoved - best.nMoved, r.early - best.early, r.grUse - best.grUse].find(x => x !== 0) < 0) best = r;
-    if (best.holes === 0 && a >= 20) break;
+  // 2) βελτίωση με τυχαίες μετακινήσεις/ανταλλαγές block (simulated annealing)
+  function anneal(G, seed, iters) {
+    const rnd = rand(seed), movable = G.st.filter(x => !fixedOf(x));
+    let cur = measure(G), E = energy(cur), best = cur, bestPos = G.st.map(x => x.p);
+    if (!movable.length || !cur.holes && !cur.moved) return bestPos;
+    const T0 = 25, T1 = 0.3;
+    for (let it = 0; it < iters; it++) {
+      const T = T0 * Math.pow(T1 / T0, it / iters);
+      const e = movable[Math.floor(rnd() * movable.length)];
+      const blk = G.blockOf(e); if (blk.some(fixedOf)) continue;
+      const q = e.p, r = 1 + Math.floor(rnd() * P); if (r === q) continue;
+      const occ = new Set(); blk.forEach(x => x.cls.forEach(c => G.at(c, r).forEach(y => occ.add(y))));
+      let blk2 = [];
+      if (occ.size) {   // ανταλλαγή με το block που βρίσκεται εκεί
+        blk2 = G.blockOf([...occ][0]);
+        if ([...occ].some(y => !blk2.includes(y)) || blk2.some(fixedOf)) continue;
+      }
+      blk.forEach(G.del); blk2.forEach(G.del);
+      let ok = fits(G, blk, r);
+      if (ok) {
+        blk.forEach(x => { x.p = r; G.add(x); });
+        if (blk2.length && !(ok = fits(G, blk2, q))) blk.forEach(G.del);
+        else blk2.forEach(x => { x.p = q; G.add(x); });
+      }
+      const undo = () => { blk.forEach(x => { x.p = q; G.add(x); }); blk2.forEach(x => { x.p = r; G.add(x); }); };
+      if (!ok) { blk.forEach(x => x.p = q); undo(); continue; }
+      const m = measure(G), dE = energy(m) - E;
+      if (dE <= 0 || rnd() < Math.exp(-dE / T)) {
+        cur = m; E += dE;
+        if (better(m.key, best.key)) { best = m; bestPos = G.st.map(x => x.p); }
+      } else { blk.forEach(G.del); blk2.forEach(G.del); undo(); }
+    }
+    return bestPos;
   }
-  const newLast = {}, origStart = start;
-  classes.forEach(c => { newLast[c] = best.lastOf(c); });
+
+  let G, layoutBad = false;
+  if (ctx.layout) {
+    G = State(lessons.map(e => { const p = ctx.layout[e.id]; return Number.isInteger(p) && p >= 1 && p <= P ? p : e.p0; }));
+    // έλεγχος: κανένα τμήμα/καθηγητής δύο φορές την ίδια ώρα, καμία δεσμευμένη ώρα
+    layoutBad = G.st.some(e => G.tAt[e.ti][e.p] > 1 || base[e.ti][e.p] === 2 || e.cls.some(c => G.at(c, e.p).some(y => y.p0 !== e.p0)));   // ίδιο τμήμα, ίδια ώρα: μόνο όσα ήταν μαζί και αρχικά
+    if (layoutBad) G = null;
+    else if (ctx.improve) {
+      const n = G.st.length, it = 3000 + n * 150;
+      let bp = G.st.map(x => x.p), bm = measure(G);
+      [1, 2, 3].forEach(k => { const pos = anneal(State(bp), 7919 * k + d, it), m = measure(State(pos)); if (better(m.key, bm.key)) { bm = m; bp = pos; } });
+      G = State(bp);
+    }
+  }
+  if (!G) {
+    const tries = ctx.attempts || 60;
+    let best = null, bm = null;
+    for (let a = 0; a < tries; a++) {
+      const g = greedy(9973 * (a + 1) + d * 31, a === 0), m = measure(g);
+      if (!best || better(m.key, bm.key)) { best = g; bm = m; }
+      if (bm.holes === 0 && a >= 20) break;
+    }
+    if (bm.holes || ctx.improveAll) {   // έμειναν κενά: βελτίωση από την καλύτερη άπληστη λύση
+      const n = lessons.length, it = 3000 + n * 150, start0 = best.st.map(x => x.p);
+      [1, 2, 3].forEach(k => {
+        const pos = anneal(State(start0), 104729 * k + d * 7, it), g = State(pos), m = measure(g);
+        if (better(m.key, bm.key)) { best = g; bm = m; }
+      });
+    }
+    G = best;
+  }
+  const fin = measure(G), newLast = {};
+  classes.forEach(c => { newLast[c] = G.lastOf(c); });
   return {
-    d, P, classes, base, firstT, start: origStart, origLast, newLast,
-    entries: best.st, removed, unknown, holes: best.holeList,
-    moved: best.st.filter(e => e.p !== e.p0).sort((a, b) => a.p0 - b.p0 || clsSort(a.cls[0], b.cls[0])),
-    at: best.at,
+    d, P, classes, base, firstT, lastT, start, origLast, newLast, layoutBad,
+    entries: G.st, removed, unknown, holes: fin.holeList,
+    moved: G.st.filter(e => e.p !== e.p0).sort((a, b) => a.p0 - b.p0 || clsSort(a.cls[0], b.cls[0])),
+    at: G.at, blockOf: G.blockOf,
   };
 }
 if (typeof module !== 'undefined') module.exports = { parseSheet, classesOf, compactDay, DAYS };
@@ -613,7 +696,7 @@ const surname = n => String(n).split(' ')[0];
 const ord = p => p + 'η';
 
 // Κατάσταση: απόντες ως { name: [μέρες] }, καρφωμένα μαθήματα ως "μέρα|όνομα|ώρα", κανόνες.
-const A = { model:null, fname:'', baseAt:0, grSrc:'', gr:null, absent:[], pins:new Set(), opts:{ useGR:true, notEarlier:false, keepDouble:false }, day:-1, view:'cls', res:{} };
+const A = { model:null, fname:'', baseAt:0, grSrc:'', gr:null, absent:[], pins:new Set(), edits:{}, sel:null, cache:{}, opts:{ useGR:true, notEarlier:false, keepDouble:false }, day:-1, view:'cls', res:{} };
 
 /* ---------- πηγή: το αρχικό πρόγραμμα της εβδομάδας ----------
    Η Συμπύκνωση είναι το 1ο βήμα, άρα δουλεύει πάντα πάνω στο αρχικό πρόγραμμα (με όσα ΓΡ έχει το ίδιο το αρχείο),
@@ -651,7 +734,7 @@ async function loadSource(manual){
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort()]).sort();
-  return JSON.stringify([A.baseAt, abs, [...A.pins].sort(), A.opts]);
+  return JSON.stringify([A.baseAt, abs, A.edits, A.opts]);
 }
 function compactName(fname, days){ return String(fname || 'Πρόγραμμα.xlsx').replace(/\.xlsx$/i, '') + ` (συμπύκνωση ${days.map(d => DSHORT[d]).join('-')}).xlsx`; }
 function syInfo(days){
@@ -741,14 +824,14 @@ function renderFlow(pending){
 /* ---------- πρόχειρο ---------- */
 function saveDraft(){
   if (!A.model) return;
-  ls.set(K.draft, { at: Date.now(), absent: A.absent.map(a => ({ name: A.model.teachers[a.ti].name, days: a.days })), pins: [...A.pins], opts: A.opts, day: A.day, view: A.view });
+  ls.set(K.draft, { at: Date.now(), absent: A.absent.map(a => ({ name: A.model.teachers[a.ti].name, days: a.days })), edits: A.edits, opts: A.opts, day: A.day, view: A.view });
 }
 function restoreDraft(){
   const dr = ls.get(K.draft); const m = A.model;
   A.absent = [];
   if (dr) {
     (dr.absent || []).forEach(a => { const ti = m.teachers.findIndex(t => key(t.name) === key(a.name)); if (ti >= 0 && !A.absent.some(x => x.ti === ti)) A.absent.push({ ti, days: (a.days || []).filter(d => d >= 0 && d < 5) }); });
-    A.pins = new Set(dr.pins || []);
+    A.edits = dr.edits && typeof dr.edits === 'object' ? dr.edits : {}; A.cache = {}; A.sel = null;
     if (dr.opts) Object.assign(A.opts, dr.opts);
     if (typeof dr.day === 'number') A.day = dr.day;
     if (dr.view) A.view = dr.view;
@@ -759,15 +842,56 @@ function restoreDraft(){
 /* ---------- υπολογισμός ---------- */
 const lessonsOn = (ti, d) => { const m = A.model, t = m.teachers[ti]; return m.slots.reduce((n, s, si) => n + (s.day === d && t.cells[si] === 'L' ? 1 : 0), 0); };
 function activeDays(){ return [...new Set(A.absent.flatMap(a => a.days))].sort((a, b) => a - b); }
-function pinSet(d){ const m = A.model, out = new Set(); A.pins.forEach(k => { const [dd, name, p] = k.split('|'); if (+dd !== d) return; const ti = m.teachers.findIndex(t => t.name === name); if (ti < 0) return; const si = m.slots.findIndex(s => s.day === d && s.period === +p); if (si >= 0) out.add(`${ti}:${si}`); }); return out; }
-function compute(){
-  const m = A.model; A.res = {};
-  activeDays().forEach(d => {
-    const absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti));
-    A.res[d] = compactDay(m, d, { absent, gr: A.gr, opts: A.opts, pins: pinSet(d) });
-  });
+/* Χειροκίνητες αλλαγές: ανά μέρα ολόκληρη η διάταξη (μάθημα «όνομα|αρχική ώρα» → ώρα) και ποια άλλαξες εσύ.
+   Ισχύουν όσο μένουν ίδιοι οι απόντες της μέρας, το πρόγραμμα και οι κανόνες. */
+const ekey = e => `${A.model.teachers[e.ti].name}|${e.p0}`;
+function daySig(d){ return JSON.stringify([A.baseAt, absentNames(d).slice().sort(), A.opts]); }
+function absentSet(d){ return new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti)); }
+function idsOf(d, keys){   // «όνομα|ώρα» → id μαθήματος της ημέρας
+  const m = A.model, out = {};
+  Object.keys(keys).forEach(k => { const i = k.lastIndexOf('|'), name = k.slice(0, i), p0 = +k.slice(i + 1);
+    const ti = m.teachers.findIndex(t => t.name === name), si = m.slots.findIndex(s => s.day === d && s.period === p0);
+    if (ti >= 0 && si >= 0) out[`${ti}:${si}`] = keys[k]; });
+  return out;
 }
-
+function compute(){
+  const m = A.model, res = {}, lost = [];
+  activeDays().forEach(d => {
+    const sig = daySig(d);
+    let ed = A.edits[d];
+    if (ed && ed.sig !== sig) { delete A.edits[d]; ed = null; lost.push(d); }
+    const ck = JSON.stringify([sig, ed ? ed.pos : null]);
+    if (A.cache[d] && A.cache[d].k === ck) { res[d] = A.cache[d].r; return; }
+    let r = compactDay(m, d, { absent: absentSet(d), gr: A.gr, opts: A.opts, layout: ed ? idsOf(d, ed.pos) : null });
+    if (r && r.layoutBad) { delete A.edits[d]; lost.push(d); r = compactDay(m, d, { absent: absentSet(d), gr: A.gr, opts: A.opts }); }
+    A.cache[d] = { k: JSON.stringify([sig, A.edits[d] ? A.edits[d].pos : null]), r }; res[d] = r;
+  });
+  A.res = res;
+  if (lost.length) toast(`Οι χειροκίνητες αλλαγές ${lost.map(d => GEN[d]).join(', ')} χάθηκαν: άλλαξαν οι απόντες ή οι κανόνες.`);
+}
+const isFixed = (d, e) => !!(A.edits[d] && A.edits[d].fixed.includes(ekey(e)));
+// Μετακίνηση (ή ανταλλαγή) του block του e στην ώρα rp. Επιστρέφει μήνυμα λάθους ή null.
+function tryMove(r, e, rp, dry){
+  const m = A.model, d = r.d, blk = r.blockOf(e), q = e.p;
+  if (rp === q) return 'Είναι ήδη εκεί.';
+  if (rp < 1 || rp > r.P) return 'Δεν υπάρχει τέτοια ώρα.';
+  const occ = new Set();
+  blk.forEach(x => { x.cls.forEach(c => r.at(c, rp).forEach(y => occ.add(y))); r.entries.forEach(y => { if (y.ti === x.ti && y.p === rp) occ.add(y); }); });
+  const blk2 = occ.size ? r.blockOf([...occ][0]) : [];
+  if ([...occ].some(y => !blk2.includes(y))) return `Την ${ord(rp)} ώρα υπάρχουν μαθήματα που δεν ανταλλάσσονται μαζί.`;
+  const moving = new Set(blk.concat(blk2)), np = x => blk.includes(x) ? rp : blk2.includes(x) ? q : x.p;
+  for (const x of moving) {
+    const p = np(x), t = m.teachers[x.ti];
+    if (r.base[x.ti][p] === 2) return `${t.name}: δεν είναι διαθέσιμος/η την ${ord(p)} ώρα (ΓΟΝ ή άλλη υποχρέωση).`;
+    if (r.entries.some(y => y !== x && y.ti === x.ti && np(y) === p)) return `${t.name}: έχει ήδη μάθημα την ${ord(p)} ώρα.`;
+    for (const c of x.cls) if (r.entries.some(y => !moving.has(y) && y.cls.includes(c) && y.p === p)) return `Το ${c} έχει ήδη μάθημα την ${ord(p)} ώρα.`;
+  }
+  if (dry) return null;
+  const ed = A.edits[d] || (A.edits[d] = { sig: daySig(d), pos: {}, fixed: [] });
+  r.entries.forEach(y => { ed.pos[ekey(y)] = np(y); });
+  moving.forEach(x => { const k = ekey(x); if (!ed.fixed.includes(k)) ed.fixed.push(k); });
+  return null;
+}
 /* ---------- προβολή ---------- */
 function fillSelect(){
   const m = A.model, sel = $('addAbs');
@@ -821,32 +945,35 @@ function renderDay(){
     `<span class="chip ${r.holes.length ? 'bad' : 'good'}">Κενά που μένουν <b>${r.holes.length}</b></span>` +
     `<span class="chip good">Σχολάνε νωρίτερα <b>${earlier.length}</b></span>`;
   if (A.view === 'cls') renderClassGrid(r); else renderTeacherGrid(r);
+  renderEditBar(r);
   renderChanges(r);
   $('unknown').innerHTML = r.unknown.length ? `<div class="warnbox">Δεν αναγνωρίστηκε τμήμα σε ${r.unknown.length} ${r.unknown.length === 1 ? 'κελί' : 'κελιά'} (${[...new Set(r.unknown.map(u => u.label))].slice(0, 8).map(esc).join(', ')}). Αυτά μένουν στη θέση τους και μετράνε ως απασχόληση του καθηγητή.</div>` : '';
 }
 function renderClassGrid(r){
   const m = A.model, P = r.P;
-  $('legend').innerHTML = '<span><i style="background:var(--mv-soft)"></i>Ανέβηκε (↑ από ποια ώρα)</span><span><i style="background:var(--bad-soft)"></i>Κενό που μένει</span><span><i style="background:repeating-linear-gradient(135deg,transparent 0 5px,var(--soft) 5px 6px)"></i>Έχει σχολάσει</span>';
+  $('legend').innerHTML = '<span><i style="background:var(--mv-soft)"></i>Άλλαξε ώρα (↑/↓ από ποια ώρα)</span><span><i style="background:var(--bad-soft)"></i>Κενό που μένει</span><span><i style="background:repeating-linear-gradient(135deg,transparent 0 5px,var(--soft) 5px 6px)"></i>Έχει σχολάσει</span>';
   let h = '<thead><tr><th class="nm">Τμήμα</th>' + Array.from({ length: P }, (_, i) => `<th>${ord(i + 1)}</th>`).join('') + '</tr></thead><tbody>';
   const holes = new Set(r.holes.map(x => `${x.c}|${x.p}`));
+  const sel = selEntry(r), sb = sel ? r.blockOf(sel) : [], rows = new Set(sb.flatMap(x => x.cls));
+  const mark = (c, p, es) => es && es.some(e => sb.includes(e)) ? ' sel' : sel && rows.has(c) && !tryMove(r, sel, p, true) ? ' tgt' : '';
   r.classes.forEach(c => {
     const changed = r.newLast[c] !== r.origLast[c] || r.entries.some(e => e.p !== e.p0 && e.cls.includes(c));
     h += `<tr class="${changed ? 'chg' : ''}"><td class="nm" title="Σχολάει ${ord(r.newLast[c])}${r.newLast[c] !== r.origLast[c] ? ` (αντί ${ord(r.origLast[c])})` : ''}">${esc(c)}</td>`;
     for (let p = 1; p <= P; p++) {
       const es = r.at(c, p);
       if (es.length) {
-        const mv = es.some(e => e.p !== e.p0), pin = es.some(e => A.pins.has(pinKey(r.d, e)));
+        const mv = es.some(e => e.p !== e.p0), pin = es.some(e => isFixed(r.d, e));
         const names = es.map(e => surname(m.teachers[e.ti].name)).join(' / ');
         const tip = es.map(e => `${m.teachers[e.ti].name} · ${e.label}${e.p !== e.p0 ? ` · από ${ord(e.p0)}` : ''}`).join('\n');
-        h += `<td class="c pick ${mv ? 'M' : 'L'}${pin ? ' pin' : ''}" data-id="${es[0].id}" title="${esc(tip)}">${esc(names)}${mv ? `<small>↑ από ${ord(es[0].p0)}</small>` : ''}</td>`;
-      } else if (holes.has(`${c}|${p}`)) h += '<td class="c H" title="Κενό που δεν καλύφθηκε">κενό</td>';
-      else if (p > r.newLast[c] || p < r.start[c]) h += '<td class="c X"></td>';
-      else h += '<td class="c"></td>';
+        h += `<td class="c pick ${mv ? 'M' : 'L'}${pin ? ' pin' : ''}${mark(c, p, es)}" data-id="${es[0].id}" data-c="${esc(c)}" data-p="${p}" title="${esc(tip)}">${esc(names)}${mv ? `<small>${arrow(es[0])} από ${ord(es[0].p0)}</small>` : ''}</td>`;
+      } else if (holes.has(`${c}|${p}`)) h += `<td class="c H${mark(c, p)}" data-c="${esc(c)}" data-p="${p}" title="Κενό που δεν καλύφθηκε">κενό</td>`;
+      else if (p > r.newLast[c] || p < r.start[c]) h += `<td class="c X${mark(c, p)}" data-c="${esc(c)}" data-p="${p}"></td>`;
+      else h += `<td class="c${mark(c, p)}" data-c="${esc(c)}" data-p="${p}"></td>`;
     }
     h += '</tr>';
   });
   $('grid').innerHTML = h + '</tbody>';
-  $('gridNote').textContent = 'Πάτα ένα μάθημα για να μείνει καρφωμένο στη θέση του (αν είχε ανέβει, γυρίζει πίσω και ο υπολογισμός ξαναγίνεται). Ξαναπάτα για να ξεκαρφωθεί.';
+  $('gridNote').textContent = 'Χειροκίνητη αλλαγή: πάτα ένα μάθημα και μετά μια φωτισμένη ώρα στην ίδια γραμμή — αν είναι κενή μετακινείται, αν έχει μάθημα γίνεται ανταλλαγή. Η τελεία δείχνει όσα άλλαξες εσύ.';
 }
 function renderTeacherGrid(r){
   const m = A.model, P = r.P, d = r.d;
@@ -858,25 +985,27 @@ function renderTeacherGrid(r){
   const rows = m.teachers.map((t, ti) => ({ t, ti })).filter(o => !o.t.staff && (byT[o.ti] || absent.has(o.ti)));
   rows.sort((a, b) => (absent.has(b.ti) - absent.has(a.ti)) || ((vacated[b.ti] ? 1 : 0) - (vacated[a.ti] ? 1 : 0)) || a.t.name.localeCompare(b.t.name, 'el'));
   let h = '<thead><tr><th class="nm">Εκπαιδευτικός</th>' + Array.from({ length: P }, (_, i) => `<th>${ord(i + 1)}</th>`).join('') + '</tr></thead><tbody>';
+  const sel = selEntry(r), sb = sel ? r.blockOf(sel) : [], selT = new Set(sb.map(x => x.ti));
+  const mark = (ti, p, e) => e && sb.includes(e) ? ' sel' : sel && selT.has(ti) && !tryMove(r, sel, p, true) ? ' tgt' : '';
   rows.forEach(({ t, ti }) => {
     const isAbs = absent.has(ti);
     h += `<tr class="${isAbs ? 'absrow' : vacated[ti] ? 'chg' : ''}"><td class="nm" title="${esc(t.name)}">${esc(t.name)}</td>`;
     for (let p = 1; p <= P; p++) {
       if (isAbs) { const e = rm[ti] && rm[ti][p]; h += `<td class="c A">${e ? `<s>${esc(e.label)}</s>` : ''}</td>`; continue; }
-      const e = byT[ti] && byT[ti][p];
+      const e = byT[ti] && byT[ti][p], mk = mark(ti, p, e), at = `data-t="${ti}" data-p="${p}"`;
       if (e) {
-        const mv = e.p !== e.p0, pin = A.pins.has(pinKey(d, e));
+        const mv = e.p !== e.p0, pin = isFixed(d, e);
         const gr = mv && r.base[ti][p] === 1;
-        h += `<td class="c pick ${mv ? 'M' : 'L'}${pin ? ' pin' : ''}" data-id="${e.id}" title="${esc(e.label)}${mv ? ` · από ${ord(e.p0)}` : ''}${gr ? ' · στη θέση ΓΡ' : ''}">${esc(e.label)}${mv ? `<small>↑ από ${ord(e.p0)}</small>` : ''}</td>`;
-      } else if (vacated[ti] && vacated[ti].has(p)) h += '<td class="c V" title="Άδειασε">·</td>';
-      else if (r.base[ti][p] === 1) h += '<td class="c Gr">ΓΡ</td>';
+        h += `<td class="c pick ${mv ? 'M' : 'L'}${pin ? ' pin' : ''}${mk}" data-id="${e.id}" ${at} title="${esc(e.label)}${mv ? ` · από ${ord(e.p0)}` : ''}${gr ? ' · στη θέση ΓΡ' : ''}">${esc(e.label)}${mv ? `<small>${arrow(e)} από ${ord(e.p0)}</small>` : ''}</td>`;
+      } else if (vacated[ti] && vacated[ti].has(p)) h += `<td class="c V${mk}" ${at} title="Άδειασε">·</td>`;
+      else if (r.base[ti][p] === 1) h += `<td class="c Gr${mk}" ${at}>ΓΡ</td>`;
       else if (r.base[ti][p] === 2) h += '<td class="c Bz">—</td>';
-      else h += '<td class="c"></td>';
+      else h += `<td class="c${mk}" ${at}></td>`;
     }
     h += '</tr>';
   });
   $('grid').innerHTML = h + '</tbody>';
-  $('gridNote').textContent = 'Πάνω οι απόντες και όσοι έχουν αλλαγές. Πάτα ένα μάθημα για να μείνει καρφωμένο στη θέση του.';
+  $('gridNote').textContent = 'Πάνω οι απόντες και όσοι έχουν αλλαγές. Πάτα ένα μάθημα και μετά μια φωτισμένη ώρα του ίδιου καθηγητή για μετακίνηση ή ανταλλαγή.';
 }
 function changeModel(r){
   const m = A.model, d = r.d;
@@ -886,6 +1015,8 @@ function changeModel(r){
     if (r.base[e.ti][e.p] === 1) tags.push('gr');
     if (e.p < r.firstT[e.ti]) tags.push('early');
     if (e.span) tags.push('double');
+    if (e.p > e.p0) tags.push('later');
+    if (isFixed(d, e)) tags.push('manual');
     (byTeacher[e.ti] = byTeacher[e.ti] || []).push({ label: e.label, from: e.p0, to: e.p, tags });
   });
   const lost = {};
@@ -893,7 +1024,7 @@ function changeModel(r){
   const earlier = r.classes.filter(c => r.newLast[c] < r.origLast[c]).map(c => ({ c, from: r.origLast[c], to: r.newLast[c] }));
   return { byTeacher, lost, earlier, holes: r.holes.slice().sort((a, b) => a.p - b.p || clsSort(a.c, b.c)) };
 }
-const TAGTXT = { gr: 'στη θέση ΓΡ', early: 'έρχεται νωρίτερα', double: 'σπάει δίωρο' };
+const TAGTXT = { gr: 'στη θέση ΓΡ', early: 'έρχεται νωρίτερα', double: 'σπάει δίωρο', later: 'πιο αργά', manual: 'χειροκίνητα' };
 function renderChanges(r){
   const m = A.model, c = changeModel(r);
   let h = '';
@@ -922,7 +1053,26 @@ function changesText(r){
   if (c.holes.length) { lines.push(''); lines.push('Κενά για αναπλήρωση: ' + c.holes.map(x => `${x.c} ${ord(x.p)}`).join(', ')); }
   return lines.join('\n');
 }
-const pinKey = (d, e) => `${d}|${A.model.teachers[e.ti].name}|${e.p0}`;
+const arrow = e => e.p < e.p0 ? '↑' : '↓';
+function selEntry(r){ return A.sel && A.sel.d === r.d ? r.entries.find(x => x.id === A.sel.id) || null : null; }
+function renderEditBar(r){
+  const bar = $('editBar'), sel = selEntry(r), ed = A.edits[r.d], m = A.model;
+  if (sel) {
+    const blk = r.blockOf(sel), who = [...new Set(blk.map(x => m.teachers[x.ti].name))].join(' / ');
+    const cls = [...new Set(blk.flatMap(x => x.cls))].join(', ');
+    bar.innerHTML = `<span class="t"><b>${esc(cls)}</b> · ${esc(who)} · ${ord(sel.p)} ώρα${sel.p !== sel.p0 ? ` (αρχικά ${ord(sel.p0)})` : ''}. Πάτα μια φωτισμένη ώρα.</span>` +
+      (sel.p !== sel.p0 ? `<button type="button" class="btn" data-ed="back">Στην αρχική ώρα (${ord(sel.p0)})</button>` : '') +
+      `<button type="button" class="btn ghost" data-ed="cancel">Ακύρωση</button>`;
+    bar.hidden = false; return;
+  }
+  if (ed && ed.fixed.length) {
+    bar.innerHTML = `<span class="t">✎ <b>${ed.fixed.length}</b> ${ed.fixed.length === 1 ? 'χειροκίνητη αλλαγή' : 'χειροκίνητες αλλαγές'} σε αυτή τη μέρα${r.holes.length ? ` · μένουν ${r.holes.length} ${r.holes.length === 1 ? 'κενό' : 'κενά'}` : ''}.</span>` +
+      (r.holes.length ? `<button type="button" class="btn primary" data-ed="fill">Γέμισε τα κενά (κράτα τις αλλαγές μου)</button>` : '') +
+      `<button type="button" class="btn" data-ed="reset">Επαναφορά σε αυτόματο</button>`;
+    bar.hidden = false; return;
+  }
+  bar.hidden = true; bar.innerHTML = '';
+}
 
 /* ---------- Excel ---------- */
 const FILL = c => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } });
@@ -1031,20 +1181,42 @@ $('absList').addEventListener('click', e => {
   if (a.days.includes(d)) A.day = d;
   change();
 });
-$('clearAbs').addEventListener('click', () => { if (!confirm('Να αφαιρεθούν όλοι οι απόντες και τα καρφωμένα μαθήματα;')) return; A.absent = []; A.pins = new Set(); fillSelect(); change(); });
+$('clearAbs').addEventListener('click', () => { if (!confirm('Να αφαιρεθούν όλοι οι απόντες και οι χειροκίνητες αλλαγές;')) return; A.absent = []; A.edits = {}; A.sel = null; fillSelect(); change(); });
 ['o-gr', 'o-early', 'o-double'].forEach(id => $(id).addEventListener('change', () => {
   A.opts = { useGR: $('o-gr').checked, notEarlier: $('o-early').checked, keepDouble: $('o-double').checked }; change();
 }));
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; A.day = +b.dataset.day; render(); });
 document.querySelector('.seg').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; A.view = b.dataset.v; renderDay(); saveDraft(); });
-$('grid').addEventListener('click', e => {
-  const td = e.target.closest('td[data-id]'); if (!td) return;
-  const r = A.res[A.day], en = r && r.entries.find(x => x.id === td.dataset.id); if (!en) return;
-  const k = pinKey(A.day, en);
-  if (A.pins.has(k)) { A.pins.delete(k); toast('Ξεκαρφώθηκε'); }
-  else { A.pins.add(k); toast(en.p !== en.p0 ? `Γύρισε στην ${ord(en.p0)} ώρα και μένει εκεί` : 'Καρφώθηκε στη θέση του'); }
-  change();
+$('grid').addEventListener('click', ev => {
+  const td = ev.target.closest('td[data-p]'); if (!td) return;
+  const r = A.res[A.day]; if (!r) return;
+  const sel = selEntry(r), id = td.dataset.id;
+  if (sel && td.classList.contains('tgt')) {           // μετακίνηση ή ανταλλαγή
+    const err = tryMove(r, sel, +td.dataset.p);
+    if (err) { toast(err); return; }
+    A.sel = null; toast('Έγινε η αλλαγή'); change(); return;
+  }
+  if (!id) { if (sel) { A.sel = null; renderDay(); } return; }
+  A.sel = sel && r.blockOf(sel).some(x => x.id === id) ? null : { d: A.day, id };
+  renderDay();
 });
+$('editBar').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-ed]'); if (!b) return;
+  const r = A.res[A.day], d = A.day, what = b.dataset.ed;
+  if (what === 'cancel') { A.sel = null; renderDay(); return; }
+  if (what === 'back') { const sel = selEntry(r); const err = sel && tryMove(r, sel, sel.p0); if (err) { toast(err); return; } A.sel = null; change(); return; }
+  if (what === 'reset') { if (!confirm(`Να χαθούν οι χειροκίνητες αλλαγές της ${GEN[d]};`)) return; delete A.edits[d]; A.sel = null; change(); return; }
+  if (what === 'fill') {
+    const ed = A.edits[d], fixed = new Set(Object.keys(idsOf(d, Object.fromEntries(ed.fixed.map(k => [k, 1]))))); 
+    const before = r.holes.length;
+    const nr = compactDay(A.model, d, { absent: absentSet(d), gr: A.gr, opts: A.opts, layout: idsOf(d, ed.pos), improve: true, pins: fixed });
+    if (!nr || nr.layoutBad) { toast('Δεν έγινε.'); return; }
+    nr.entries.forEach(y => { ed.pos[ekey(y)] = y.p; });
+    toast(nr.holes.length < before ? `Έκλεισαν ${before - nr.holes.length} από τα ${before} κενά` : 'Δεν βρέθηκε τρόπος να κλείσουν άλλα κενά χωρίς να αλλάξουν όσα όρισες');
+    change(); return;
+  }
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && A.sel) { A.sel = null; renderDay(); } });
 $('xlsx').addEventListener('click', async () => {
   const b = $('xlsx'); b.disabled = true;
   try { const blob = await buildXlsx(); const ds = activeDays().map(d => DSHORT[d]).join('-'); download(blob, `Συμπύκνωση_${ds}.xlsx`); }
@@ -1066,7 +1238,7 @@ async function goEfimeries(){
 $('nextBtn').addEventListener('click', goEfimeries);
 $('skipBtn').addEventListener('click', () => {
   if (!confirm('Χωρίς συμπύκνωση αυτή την εβδομάδα; Αφαιρούνται οι απόντες και οι Εφημερίες παίρνουν το κανονικό πρόγραμμα.')) return;
-  A.absent = []; A.pins = new Set(); fillSelect(); render(); goEfimeries();
+  A.absent = []; A.edits = {}; A.sel = null; fillSelect(); render(); goEfimeries();
 });
 async function pickFile(f){ if (!f) return; if (!/\.xlsx$/i.test(f.name)) { toast('Χρειάζεται αρχείο .xlsx'); return; } await loadSource({ buf: await f.arrayBuffer(), name: f.name }); }
 $('file').addEventListener('change', async e => { await pickFile(e.target.files[0]); e.target.value = ''; });
