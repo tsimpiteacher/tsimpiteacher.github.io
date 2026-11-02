@@ -397,9 +397,38 @@
       f.src = src; document.body.appendChild(f);
     });
   }
-  function loadZip() {
-    return window.JSZip ? Promise.resolve() : new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+  // Δικό μας .zip (χωρίς συμπίεση, χωρίς εξωτερική βιβλιοθήκη): δουλεύει και όταν το δίκτυο μπλοκάρει τα CDN.
+  // Ελληνικά ονόματα αρχείων σε UTF-8 (σημαία 0x0800), ώστε να φαίνονται σωστά σε Windows/WinRAR.
+  var CRC = (function () { var t = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u) { var c = 0xFFFFFFFF; for (var i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function makeZip(files) {
+    // FileReader της αρχικής: τα Blob έρχονται από εφαρμογές που φορτώθηκαν αθόρυβα και έχουν ήδη κλείσει
+    var read = function (b) { return new Promise(function (ok, no) { var r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = function () { no(r.error); }; r.readAsArrayBuffer(b); }); };
+    return Promise.all(files.map(function (f) { return read(f.blob); })).then(function (bufs) {
+      var enc = new TextEncoder(), parts = [], central = [], off = 0, d = new Date();
+      var dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF, dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+      files.forEach(function (f, i) {
+        var data = new Uint8Array(bufs[i]), name = enc.encode(f.filename), crc = crc32(data);
+        var h = new DataView(new ArrayBuffer(30));
+        h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+        h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+        h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+        parts.push(h.buffer, name, data);
+        var c = new DataView(new ArrayBuffer(46));
+        c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+        c.setUint16(12, dt, true); c.setUint16(14, dd, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+        c.setUint16(28, name.length, true); c.setUint16(30, 0, true); c.setUint16(32, 0, true); c.setUint16(34, 0, true); c.setUint16(36, 0, true); c.setUint32(38, 0, true); c.setUint32(42, off, true);
+        central.push(c.buffer, name);
+        off += 30 + name.length + data.length;
+      });
+      var csize = central.reduce(function (a, b) { return a + (b.byteLength); }, 0);
+      var e = new DataView(new ArrayBuffer(22));
+      e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+      return new Blob(parts.concat(central, [e.buffer]), { type: 'application/zip' });
+    });
   }
+  // αν αποτύχει κάτι αφού διαλέξεις πού θα σωθεί, σβήσε το άδειο αρχείο που έφτιαξε το «Αποθήκευση ως»
+  function dropEmpty(h) { try { if (h && h.remove) return h.remove().catch(function () {}); } catch (e) {} return Promise.resolve(); }
   function save(blob, name) { var u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 60000); return u; }
   function zipName() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return 'Εβδομάδα_' + p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear() + '.zip'; }
   // «Αποθήκευση ως»: ρωτά πρώτα πού θα σωθεί το .zip (Chrome/Edge)· όπου δεν υποστηρίζεται, κατεβαίνει στις Λήψεις.
@@ -425,20 +454,17 @@
         else r.forEach(function (f) { files.push(f); });
       });
       if (!files.length) throw new Error(errs.join(' · '));
-      return loadZip().then(function () {
-        var z = new JSZip(); files.forEach(function (f) { z.file(f.filename, f.blob); });
-        return z.generateAsync({ type: 'blob' });
-      }, function () { return null; }).then(function (zip) {
+      return makeZip(files).then(function (zip) {
         var links = files.map(function (f) { var u = URL.createObjectURL(f.blob); setTimeout(function () { URL.revokeObjectURL(u); }, 600000); return '<a href="' + u + '" download="' + esc(f.filename) + '">' + esc(f.filename) + '</a>'; });
         var write = !zip ? Promise.resolve('') : handle
-          ? handle.createWritable().then(function (w) { return w.write(zip).then(function () { return w.close(); }); }).then(function () { return 'Αποθηκεύτηκε ένα .zip με ' + files.length + ' αρχεία. '; }, function () { save(zip, zipName()); return 'Κατέβηκε ένα .zip με ' + files.length + ' αρχεία. '; })
+          ? handle.createWritable().then(function (w) { return w.write(zip).then(function () { return w.close(); }); }).then(function () { return 'Αποθηκεύτηκε ένα .zip με ' + files.length + ' αρχεία. '; }, function () { return dropEmpty(handle).then(function () { save(zip, zipName()); return 'Κατέβηκε ένα .zip με ' + files.length + ' αρχεία. '; }); })
           : Promise.resolve((save(zip, zipName()), 'Κατέβηκε ένα .zip με ' + files.length + ' αρχεία. '));
         return write.then(function (t) {
           msg.innerHTML = t + 'Ξεχωριστά: ' + links.join(' · ') + (errs.length ? '<br>⚠ ' + esc(errs.join(' · ')) : '');
           msg.hidden = false;
         });
       });
-    }).catch(function (e) { msg.textContent = '⚠ ' + (e.message || e); msg.hidden = false; })
+    }).catch(function (e) { dropEmpty(handle); msg.textContent = '⚠ Δεν φτιάχτηκε το .zip: ' + (e.message || e); msg.hidden = false; })
       .then(function () { btn.disabled = false; btn.querySelector('span').textContent = 'Λήψη όλων'; });
     }
   });
