@@ -110,6 +110,7 @@ td select{width:100%;max-width:330px}
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
     <span>Νέα έκδοση · Ανανέωση</span>
   </button>
+  <button type="button" class="sbar-ver" id="sbarVer" title="Έκδοση εφαρμογής · πάτα για έλεγχο ενημέρωσης"></button>
   <button type="button" class="sbar-theme" id="sbarTheme" aria-label="Θέμα"></button>
   <div class="sbar-seg" role="group" aria-label="Εναλλαγή εφαρμογής">
     <a class="sbar-opt sy" href="../sympyknosi/" data-to="sy">
@@ -164,6 +165,11 @@ td select{width:100%;max-width:330px}
   .sbar-upd[hidden]{display:none;}
   .sbar button:focus-visible{outline:2px solid var(--sb-ink); outline-offset:2px;}
   @media (max-width:560px){ .sbar-upd span{display:none;} .sbar-upd{padding:9px;} }
+  .sbar-ver{display:inline-flex; align-items:center; gap:5px; height:36px; padding:0 10px; border:0; border-radius:10px; background:transparent; color:var(--sb-muted) !important; font-size:12px !important; font-weight:600 !important; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .sbar-ver:hover{background:var(--sb-track); color:var(--sb-ink) !important;}
+  .sbar-ver.ok{color:#2E7D4F !important;} .sbar-ver.new{background:#F2B233; color:#2A1D00 !important;}
+  .sbar-ver .vl{display:inline;} @media (max-width:760px){ .sbar-ver .vl{display:none;} .sbar-ver{padding:0 7px;} }
+  @media (max-width:400px){ .sbar-ver{flex-direction:column; justify-content:center; gap:0; padding:0 4px; font-size:10px !important; line-height:1.15;} }
   .sbar-seg{display:inline-flex; gap:4px; padding:3px; background:var(--sb-track); border-radius:11px;}
   .sbar-opt{display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:8px; color:var(--sb-muted) !important; transition:background .15s, color .15s;}
   .sbar-opt:hover{color:var(--sb-ink) !important; background:var(--sb-bg);}
@@ -237,6 +243,38 @@ td select{width:100%;max-width:330px}
     var check = function () { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () {}); };
     document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
     setInterval(check, 30 * 60 * 1000);
+  }
+  // ---- Έκδοση: ημερομηνία του αρχείου που τρέχει · κλικ = έλεγχος για νεότερη έκδοση στον server ----
+  var vb = document.getElementById('sbarVer');
+  if (vb) {
+    var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+    var fmt = function (d) { return p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); };
+    var cur = new Date(document.lastModified), base = '<span class="vl">Έκδοση </span><span>' + fmt(cur).replace(' ', '</span> <span>') + '</span>';
+    var show = function (html, cls, ms) { vb.innerHTML = html; vb.className = 'sbar-ver' + (cls ? ' ' + cls : ''); if (ms) setTimeout(function () { vb.innerHTML = base; vb.className = 'sbar-ver'; }, ms); };
+    show(base);
+    var latest = function () {
+      return fetch(location.pathname, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+        var lm = r.headers.get('last-modified'); return lm ? new Date(lm) : null;
+      });
+    };
+    var newer = function (srv) { return srv && srv.getTime() - cur.getTime() > 60000; };
+    var go = function () {
+      show('Ενημέρωση…');
+      var done = function () { location.reload(); };
+      if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(function (r) { return r && r.update(); }).catch(function () {}).then(done); else done();
+    };
+    vb.addEventListener('click', function () {
+      if (vb.classList.contains('new')) return go();
+      show('Έλεγχος…');
+      latest().then(function (srv) {
+        if (newer(srv)) go();
+        else show('✓ Τελευταία έκδοση', 'ok', 2500);
+      }).catch(function () { show('Χωρίς σύνδεση', '', 2500); });
+    });
+    // αθόρυβος έλεγχος στο άνοιγμα και όταν η εφαρμογή ξαναγίνεται ορατή
+    var quiet = function () { latest().then(function (srv) { if (newer(srv)) show('Νέα έκδοση ' + fmt(srv) + ' · Ανανέωση', 'new'); }).catch(function () {}); };
+    quiet();
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) quiet(); });
   }
 })();
 </script>
