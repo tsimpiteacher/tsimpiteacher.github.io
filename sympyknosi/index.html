@@ -195,21 +195,22 @@ tr.chg td.nm{color:var(--mv)}
   <div class="sbar-seg" role="group" aria-label="Εναλλαγή εφαρμογής">
     <a class="sbar-opt sy" href="../sympyknosi/" data-to="sy">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="13" height="17" rx="2.5"/><path d="M2.5 9.2h13M2.5 14.8h13M9 3.5v17"/><path d="M20 20.5V6.5M17 9.5l3-3 3 3"/></svg>
-      <span class="l">Συμπύκνωση</span><span class="s">Συμπ.</span>
+      <b class="sn">1</b><span class="l">Συμπύκνωση</span><span class="s">Συμπ.</span>
     </a>
 <a class="sbar-opt ef" href="../efimeries/" data-to="ef">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 3v3.5M16 3v3.5"/></svg>
-      <span class="l">Εφημερίες</span><span class="s">Εφημ.</span>
+      <b class="sn">2</b><span class="l">Εφημερίες</span><span class="s">Εφημ.</span>
     </a>
 <a class="sbar-opt gr" href="../gr/" data-to="gr">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M9 9v11.5M15 9v11.5"/></svg>
-      <span>ΓΡ</span>
+      <b class="sn">3</b><span>ΓΡ</span>
     </a>
 <a class="sbar-opt an" href="../anaplirwseis/" data-to="an">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5h5M18.5 5v5"/></svg>
-      <span class="l">Αναπληρώσεις</span><span class="s">Αναπλ.</span>
+      <b class="sn">4</b><span class="l">Αναπληρώσεις</span><span class="s">Αναπλ.</span>
     </a>
   </div>
+  <a class="sbar-next" id="sbarNext" href="../" hidden><span class="nl"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
   </div>
 </nav>
 <style>
@@ -259,6 +260,16 @@ tr.chg td.nm{color:var(--mv)}
   .sbar-opt.an[aria-current="page"]{background:var(--sb-an);}
   .sbar-opt.sy[aria-current="page"]{background:var(--sb-sy);}
   .sbar-opt .s{display:none;}
+  .sbar-opt .sn{display:inline-grid; place-items:center; width:18px; height:18px; border-radius:50%; font-size:11px; background:var(--sb-track); color:inherit;}
+  .sbar-opt[aria-current="page"] .sn{background:rgba(255,255,255,.28);}
+  .sbar-opt svg{display:none;}
+  .sbar-next{display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:10px; background:var(--sb-ink); color:var(--sb-bg) !important; font-weight:700; white-space:nowrap;}
+  :root[data-theme="dark"] .sbar-next{background:#E8EDF5; color:#0D1410 !important;}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .sbar-next{background:#E8EDF5; color:#0D1410 !important;} }
+  .sbar-next:hover{filter:brightness(1.15);}
+  .sbar-next[hidden]{display:none;}
+  @media (max-width:980px){ .sbar-next .nl{display:none;} .sbar-next{padding:8px 10px;} }
+  @media (max-width:560px){ .sbar-opt:not([aria-current]) span:not(.sn){display:none;} .sbar-ver{display:none;} .sbar-opt{padding:7px 6px;} .sbar-right{gap:4px;} }
   @media (max-width:900px){ .sbar-opt{padding:7px 10px;} }
   @media (max-width:760px){ .sbar-opt .l{display:none;} .sbar-opt .s{display:inline;} .sbar-opt{padding:7px 9px; gap:5px;} .sbar-opt svg{display:none;} }
   .sbar a:focus-visible{outline:2px solid var(--sb-ink); outline-offset:2px;}
@@ -278,6 +289,15 @@ tr.chg td.nm{color:var(--mv)}
     cur.addEventListener('click', function (e) { e.preventDefault(); });
   }
   try { localStorage.setItem('suite-last-app', app); } catch (e) { /* αγνόησε */ }
+  // ---- Επόμενο βήμα της εβδομάδας: Συμπύκνωση → Εφημερίες → ΓΡ → Αναπληρώσεις → (αρχική: λήψη όλων) ----
+  // Μια εφαρμογή μπορεί να ορίσει window.suiteNext(href) για να ετοιμάσει πρώτα κάτι (π.χ. η Συμπύκνωση το πρόγραμμα).
+  var NEXT = { sy: ['../efimeries/?from=sy', 'Επόμενο: Εφημερίες'], ef: ['../gr/?from=ef', 'Επόμενο: ΓΡ'], gr: ['../anaplirwseis/?from=gr', 'Επόμενο: Αναπληρώσεις'], an: ['../#week', 'Τέλος: Λήψη όλων'] };
+  var nx = document.getElementById('sbarNext');
+  if (nx && NEXT[app]) {
+    nx.href = NEXT[app][0]; nx.querySelector('.nl').textContent = NEXT[app][1]; nx.title = NEXT[app][1]; nx.hidden = false;
+    nx.addEventListener('click', function (e) { if (typeof window.suiteNext === 'function') { e.preventDefault(); window.suiteNext(nx.href); } });
+  }
+  // Προφόρτωση της άλλης εφαρμογής μόλις ο δείκτης/δάχτυλο πάει στο κουμπί, για άμεση εναλλαγή.
   var done = false;
   function prefetch() {
     if (done) return; done = true;
@@ -288,6 +308,7 @@ tr.chg td.nm{color:var(--mv)}
   bar.addEventListener('pointerenter', prefetch, { once: true });
   bar.addEventListener('touchstart', prefetch, { once: true, passive: true });
   bar.addEventListener('focusin', prefetch, { once: true });
+  // ---- Θέμα: ένα κουμπί για όλη τη σουίτα (αυτόματο → φωτεινό → σκούρο), κοινό για όλες τις εφαρμογές ----
   var TK = 'suite-theme', root = document.documentElement, tb = document.getElementById('sbarTheme');
   var ICONS = {
     auto: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/></svg>',
@@ -307,12 +328,22 @@ tr.chg td.nm{color:var(--mv)}
     applyTheme(next);
   });
   window.addEventListener('storage', function (e) { if (e.key === TK) applyTheme(getTheme()); });
+
+  // ---- Νέα έκδοση: όταν ανέβει ενημέρωση ενώ η εφαρμογή είναι ανοιχτή ----
   var ub = document.getElementById('sbarUpd');
+  // Αυτόματη ανανέωση σε νέα έκδοση (μία φορά ανά λίγα λεπτά, ώστε να μη γίνει ποτέ κύκλος). Τα δεδομένα σώζονται μόνα τους.
+  function autoReload(why) {
+    var k = 'suite-auto-reload:' + location.pathname, t = 0;
+    try { t = +sessionStorage.getItem(k) || 0; } catch (e) { return false; }
+    if (Date.now() - t < 5 * 60 * 1000) return false;
+    try { sessionStorage.setItem(k, String(Date.now())); } catch (e) { return false; }
+    location.reload(); return true;
+  }
   if ('serviceWorker' in navigator && ub) {
     var oldUrl = navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL;
     navigator.serviceWorker.addEventListener('controllerchange', function () {
       var c = navigator.serviceWorker.controller;
-      if (oldUrl && c && c.scriptURL === oldUrl) ub.hidden = false;
+      if (oldUrl && c && c.scriptURL === oldUrl && !autoReload('sw')) ub.hidden = false;   // ίδια εφαρμογή, νεότερη έκδοση
       oldUrl = oldUrl || (c && c.scriptURL);
     });
     ub.addEventListener('click', function () { location.reload(); });
@@ -348,7 +379,12 @@ tr.chg td.nm{color:var(--mv)}
       }).catch(function () { show('Χωρίς σύνδεση', '', 2500); });
     });
     // αθόρυβος έλεγχος στο άνοιγμα και όταν η εφαρμογή ξαναγίνεται ορατή
-    var quiet = function () { latest().then(function (srv) { if (newer(srv)) show('Νέα έκδοση ' + fmt(srv) + ' · Ανανέωση', 'new'); }).catch(function () {}); };
+    var quiet = function () { latest().then(function (srv) {
+      if (!newer(srv)) return;
+      var k = 'suite-auto-reload:' + location.pathname, t = 0; try { t = +sessionStorage.getItem(k) || 0; } catch (e) {}
+      if (Date.now() - t > 5 * 60 * 1000) { try { sessionStorage.setItem(k, String(Date.now())); } catch (e) {} go(); }   // νεότερη έκδοση: ανανέωση μόνη της
+      else show('Νέα έκδοση ' + fmt(srv) + ' · Ανανέωση', 'new');
+    }).catch(function () {}); };
     quiet();
     document.addEventListener('visibilitychange', function () { if (!document.hidden) quiet(); });
   }
@@ -419,12 +455,6 @@ tr.chg td.nm{color:var(--mv)}
         <div class="card changes">
           <h2>Αλλαγές ημέρας</h2>
           <div id="changes"></div>
-          <div class="actions no-print">
-            <button class="btn primary" id="xlsx" type="button">Λήψη Excel</button>
-            <button class="btn" id="copy" type="button">Αντιγραφή</button>
-            <button class="btn" id="print" type="button">Εκτύπωση</button>
-          </div>
-          <p class="note no-print" id="xlsxNote"></p>
         </div>
       </div>
     </div>
@@ -781,12 +811,12 @@ async function loadSource(manual){
     restoreDraft();
     fillSelect(); render();
     if (manual) publish(true);
-    else { const t = ls.get(K.tt); let v = 0; try { v = t && t.from === 'sy' && t.sy && t.sy.sig ? JSON.parse(t.sy.sig)[0] : SIGV; } catch(e) {} if (v !== SIGV && t.sy.days && t.sy.days.length) publish(); }
+    else { const t = ls.get(K.tt); let v = 0; try { v = t && t.from === 'sy' && t.sy && t.sy.sig ? JSON.parse(t.sy.sig)[0] : SIGV; } catch(e) {} if (v !== SIGV && t && t.sy && (t.sy.days || []).length) publish(); }
   } catch(e) { toast('Δεν διαβάστηκε το πρόγραμμα: ' + (e.message || e)); if (!A.model) { $('empty').hidden = false; $('main').hidden = true; } }
 }
 
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
-const SIGV = 7;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
+const SIGV = 8;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort(), a.days.map(d => hoursOf(a, d))]).sort();
   return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts, A.parLocks]);
@@ -863,10 +893,11 @@ async function publish(force){
     const days = activeDays().filter(d => A.res[d]), sig = sigNow(), tt = ls.get(K.tt);
     const ttSy = tt && tt.from === 'sy' && tt.sy;
     if (ttSy && tt.sy.sig === sig) return true;
-    if (!days.length && !force && !(ttSy && tt.sy.days.length)) return true;   // ήδη ισχύει το αρχικό πρόγραμμα
+    if (!days.length && !force && !(ttSy && (tt.sy.days || []).length)) return true;   // ήδη ισχύει το αρχικό πρόγραμμα
     const rec = days.length
       ? { fname: compactName(base.fname, days), at: Date.now(), from: 'sy', file: toB64(await buildWeekXlsx(base.file, days)), sy: Object.assign(syInfo(days), { sig }) }
-      : { fname: base.fname, at: Date.now(), from: 'sy', file: base.file, sy: { days: [], dayNames: [], absent: {}, sig } };
+      : { fname: base.fname, at: Date.now(), from: 'sy', file: base.file, sy: { days: [], dayNames: [], absent: {}, gaps: [], sig } };
+    rec.sy.baseAt = A.baseAt;   // ταυτότητα εβδομάδας για Εφημερίες/ΓΡ (κρατούν τις αλλαγές τους μέσα στην ίδια εβδομάδα)
     if (!ls.set(K.tt, rec)) { toast('Δεν χωράει το πρόγραμμα στη μνήμη της συσκευής — δεν πέρασε στις Εφημερίες.'); return false; }
     return true;
   })();
@@ -1145,19 +1176,6 @@ function renderChanges(r){
   const lt = Object.keys(c.lost).map(Number);
   if (lt.length) h += '<h3>Ώρες απόντων</h3><ul>' + lt.map(ti => `<li><b>${esc(m.teachers[ti].name)}</b><br><span style="color:var(--muted)">${c.lost[ti].sort((a, b) => a.p0 - b.p0).map(e => `${ord(e.p0)} ${esc(e.label)}`).join(' · ')}</span></li>`).join('') + '</ul>';
   $('changes').innerHTML = h;
-  $('xlsxNote').textContent = activeDays().length > 1 ? `Το Excel περιέχει όλες τις μέρες με απουσίες (${activeDays().map(d => DAYS[d]).join(', ')}).` : '';
-}
-function changesText(r){
-  const m = A.model, c = changeModel(r), lines = [];
-  lines.push(`ΑΛΛΑΓΕΣ ΠΡΟΓΡΑΜΜΑΤΟΣ — ${DAYS[r.d].toUpperCase()}`);
-  const ab = absentNames(r.d); if (ab.length) lines.push('Απόντες: ' + ab.join(', '));
-  lines.push('');
-  Object.keys(c.byTeacher).map(Number).sort((a, b) => m.teachers[a].name.localeCompare(m.teachers[b].name, 'el')).forEach(ti => {
-    c.byTeacher[ti].sort((a, b) => a.from - b.from).forEach(x => lines.push(`${m.teachers[ti].name} · ${x.label}: ${ord(x.from)} ώρα → ${ord(x.to)} ώρα${x.tags.length ? ' (' + x.tags.map(t => TAGTXT[t]).join(', ') + ')' : ''}`));
-  });
-  if (c.earlier.length) { lines.push(''); lines.push('Σχολάνε νωρίτερα: ' + c.earlier.map(x => `${x.c} μετά την ${ord(x.to)}`).join(', ')); }
-  if (c.holes.length) { lines.push(''); lines.push('Κενά για αναπλήρωση: ' + c.holes.map(x => `${x.c} ${ord(x.p)}`).join(', ')); }
-  return lines.join('\n');
 }
 const arrow = e => e.p < e.p0 ? '↑' : '↓';
 function selEntry(r){ return A.sel && A.sel.d === r.d ? r.entries.find(x => x.id === A.sel.id) || null : null; }
@@ -1180,119 +1198,10 @@ function renderEditBar(r){
   bar.hidden = true; bar.innerHTML = '';
 }
 
-/* ---------- Excel ---------- */
+/* ---------- χρώματα για το πρόγραμμα των επόμενων βημάτων ---------- */
 const FILL = c => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } });
 const THIN = { style: 'thin', color: { argb: 'FF9AA5A6' } };
 const BORDER = { top: THIN, left: THIN, bottom: THIN, right: THIN };
-async function buildXlsx(){
-  const m = A.model, wb = new ExcelJS.Workbook();
-  wb.creator = 'Συμπύκνωση'; wb.created = new Date();
-  const school = (m.title || '').split(' · ')[0];
-  const all = [];
-  activeDays().forEach(d => {
-    const r = A.res[d]; if (!r) return;
-    const P = r.P, absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti)), absA = A.absent.reduce((o, a) => (o[a.ti] = a, o), {});
-    // Φύλλο 1: ίδια διάταξη με το ωρολόγιο (ανοίγει και στις άλλες εφαρμογές)
-    const ws = wb.addWorksheet(DAYS[d], { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .4, right: .4, top: .5, bottom: .5, header: .2, footer: .2 } }, views: [{ state: 'frozen', xSplit: 2, ySplit: 5 }] });
-    ws.getCell(1, 1).value = school || 'Ωρολόγιο πρόγραμμα';
-    ws.getCell(2, 1).value = `Συμπυκνωμένο πρόγραμμα ${GEN[d]} · Απόντες: ${absentNames(d).join(', ') || '—'}`;
-    ws.getCell(1, 1).font = { bold: true, size: 13 }; ws.getCell(2, 1).font = { bold: true, size: 11, color: { argb: 'FF00695C' } };
-    ws.getCell(4, 1).value = 'ΕΚΠΑΙΔΕΥΤΙΚΟΣ'; ws.getCell(4, 2).value = 'ΕΙΔΙΚΟΤΗΤΑ';
-    ws.getCell(4, 3).value = DAYS[d]; ws.mergeCells(4, 3, 4, 2 + P);
-    ws.getCell(4, 3 + P).value = 'ΣΗΜΕΙΩΣΗ';
-    for (let p = 1; p <= P; p++) ws.getCell(5, 2 + p).value = p;
-    [4, 5].forEach(rr => { for (let c = 1; c <= 3 + P; c++) { const x = ws.getCell(rr, c); x.font = { bold: true }; x.alignment = { horizontal: 'center', vertical: 'middle' }; x.fill = FILL('DCEFEC'); x.border = BORDER; } });
-    ws.getColumn(1).width = 30; ws.getColumn(2).width = 11; for (let p = 1; p <= P; p++) ws.getColumn(2 + p).width = 9; ws.getColumn(3 + P).width = 44;
-    const byT = {}; r.entries.forEach(e => { (byT[e.ti] = byT[e.ti] || {})[e.p] = e; });
-    const S = m.slots.map((s, si) => ({ ...s, si })).filter(s => s.day === d);
-    let row = 6;
-    m.teachers.forEach((t, ti) => {
-      if (t.staff) return;
-      ws.getCell(row, 1).value = t.name; ws.getCell(row, 2).value = t.spec;
-      const notes = [];
-      for (let p = 1; p <= P; p++) {
-        const x = ws.getCell(row, 2 + p); x.border = BORDER; x.alignment = { horizontal: 'center', vertical: 'middle' };
-        if (isAbsAt(d, ti, p)) { x.fill = FILL('BFBFBF'); continue; }
-        const e = byT[ti] && byT[ti][p];
-        if (e) {
-          x.value = e.label;
-          if (e.p !== e.p0) { x.fill = FILL('B2DFDB'); x.font = { bold: true, color: { argb: 'FF004D40' } }; x.note = `Από την ${ord(e.p0)} ώρα`; notes.push(`${e.label} ${ord(e.p0)}→${ord(e.p)}`); }
-        } else {
-          const s = S.find(s => s.period === p), c = s ? t.cells[s.si] : 'F';
-          const isGr = A.gr && A.gr[ti] ? A.gr[ti].has(s && s.si) : c === 'G';
-          if (c === 'P') x.value = 'ΓΟΝ';
-          else if (c === 'L' && !classesOf(t.labels[s.si]).length) x.value = t.labels[s.si];
-          else if (isGr) x.value = 'ΓΡ';
-          if (s && t.grey[s.si]) x.fill = FILL('BFBFBF');
-          else if (r.entries.some(q => q.ti === ti && q.p0 === p && q.p !== q.p0)) { x.fill = FILL('FFFF00'); x.note = 'Κενό από τη συμπύκνωση'; }
-        }
-      }
-      if (absent.has(ti)) { const h = hoursOf(absA[ti], d); notes.push(h ? `ΑΠΩΝ ${hrsLabel(h)}` : 'ΑΠΩΝ'); }
-      const nc = ws.getCell(row, 3 + P); nc.value = notes.join(' · '); nc.border = BORDER; if (notes.length) nc.font = { bold: true, color: { argb: absent.has(ti) ? 'FFB3261E' : 'FF004D40' } };
-      ws.getCell(row, 1).border = BORDER; ws.getCell(row, 2).border = BORDER;
-      if (notes.length) ws.getCell(row, 1).font = { bold: true };
-      row++;
-    });
-    ws.pageSetup.printArea = `A1:${String.fromCharCode(66 + P + 1)}${row - 1}`;
-    // Φύλλο 2: ανά τμήμα
-    const wc = wb.addWorksheet(`${DAYS[d]} τμήματα`, { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 1 } });
-    wc.getCell(1, 1).value = `Πρόγραμμα τμημάτων ${GEN[d]} (μετά τη συμπύκνωση)`; wc.getCell(1, 1).font = { bold: true, size: 13 };
-    wc.getCell(3, 1).value = 'ΤΜΗΜΑ';
-    for (let p = 1; p <= P; p++) wc.getCell(3, 1 + p).value = ord(p);
-    wc.getCell(3, 2 + P).value = 'ΣΧΟΛΑΕΙ';
-    for (let c = 1; c <= 2 + P; c++) { const x = wc.getCell(3, c); x.font = { bold: true }; x.fill = FILL('DCEFEC'); x.border = BORDER; x.alignment = { horizontal: 'center' }; }
-    wc.getColumn(1).width = 10; for (let p = 1; p <= P; p++) wc.getColumn(1 + p).width = 22; wc.getColumn(2 + P).width = 16;
-    const holes = new Set(r.holes.map(x => `${x.c}|${x.p}`));
-    r.classes.forEach((c, i) => {
-      const rr = 4 + i; wc.getCell(rr, 1).value = c; wc.getCell(rr, 1).font = { bold: true }; wc.getCell(rr, 1).border = BORDER;
-      for (let p = 1; p <= P; p++) {
-        const x = wc.getCell(rr, 1 + p), es = r.at(c, p); x.border = BORDER; x.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-        if (es.length) { x.value = es.map(e => surname(m.teachers[e.ti].name) + (e.p !== e.p0 ? ` (από ${ord(e.p0)})` : '')).join(' / '); if (es.some(e => e.p !== e.p0)) { x.fill = FILL('B2DFDB'); x.font = { bold: true, color: { argb: 'FF004D40' } }; } }
-        else if (holes.has(`${c}|${p}`)) { x.value = 'ΚΕΝΟ'; x.fill = FILL('F8D7D4'); x.font = { bold: true, color: { argb: 'FFB3261E' } }; }
-        else if (p > r.newLast[c]) x.fill = FILL('F1F4F4');
-      }
-      const z = wc.getCell(rr, 2 + P); z.value = `μετά την ${ord(r.newLast[c])}` + (r.newLast[c] < r.origLast[c] ? ` (αντί ${ord(r.origLast[c])})` : ''); z.border = BORDER;
-      if (r.newLast[c] < r.origLast[c]) z.font = { bold: true, color: { argb: 'FF2E7D4F' } };
-    });
-    const cm = changeModel(r);
-    Object.keys(cm.byTeacher).map(Number).forEach(ti => cm.byTeacher[ti].forEach(x => all.push([DAYS[d], m.teachers[ti].name, x.label, ord(x.from), ord(x.to), x.tags.map(t => TAGTXT[t]).join(', ')])));
-    cm.holes.forEach(x => all.push([DAYS[d], '—', x.c, ord(x.p), '', 'Κενό για αναπλήρωση']));
-  });
-  const wa = wb.addWorksheet('Αλλαγές', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-  wa.addRow(['Ημέρα', 'Εκπαιδευτικός', 'Τμήμα', 'Από ώρα', 'Σε ώρα', 'Σημείωση']).eachCell(x => { x.font = { bold: true }; x.fill = FILL('DCEFEC'); x.border = BORDER; });
-  all.forEach(a => wa.addRow(a).eachCell(x => { x.border = BORDER; }));
-  [12, 32, 12, 10, 10, 30].forEach((w, i) => wa.getColumn(i + 1).width = w);
-  return new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-}
-/* «Αποθήκευση ως»: ρωτά πού θα σωθεί το αρχείο (Chrome/Edge). Όπου δεν υποστηρίζεται, κατεβαίνει στις Λήψεις.
-   Το παράθυρο ανοίγει πριν φτιαχτεί το αρχείο, ώστε ο browser να το επιτρέψει· όλες οι εφαρμογές της σουίτας
-   μοιράζονται το ίδιο id, άρα θυμούνται τον τελευταίο φάκελο. Επιστρέφει 'saved' | 'downloaded' | 'cancelled'. */
-const SAVE_TYPES = {
-  xlsx: { description: 'Βιβλίο Excel', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } },
-  docx: { description: 'Έγγραφο Word', accept: { 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] } },
-  zip: { description: 'Αρχείο ZIP', accept: { 'application/zip': ['.zip'] } },
-  json: { description: 'Αρχείο JSON', accept: { 'application/json': ['.json'] } },
-};
-async function saveAs(name, make) {
-  const type = SAVE_TYPES[(String(name).match(/\.(\w+)$/) || [])[1]];
-  let handle = null;
-  if (typeof window.showSaveFilePicker === 'function' && window.self === window.top) {
-    try { handle = await window.showSaveFilePicker({ suggestedName: name, id: 'suite-save', types: type ? [type] : undefined }); }
-    catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; handle = null; }
-  }
-  const blob = await make();
-  if (handle) { try { const w = await handle.createWritable(); await w.write(blob); await w.close(); return 'saved'; } catch (e) { /* συνέχισε με απλή λήψη */ } }
-  const url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-  return 'downloaded';
-}
-const SAVE_MSG = { saved: 'Αποθηκεύτηκε', downloaded: 'Κατέβηκε στις Λήψεις', cancelled: 'Η αποθήκευση ακυρώθηκε' };
-function download(blob, name){
-  const url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
 
 /* ---------- συμβάντα ---------- */
 $('addAbs').addEventListener('change', e => {
@@ -1359,18 +1268,6 @@ $('editBar').addEventListener('click', ev => {
   }
 });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && A.sel) { A.sel = null; renderDay(); } });
-$('xlsx').addEventListener('click', async () => {
-  const b = $('xlsx'); b.disabled = true;
-  try { const name = `Συμπύκνωση_${activeDays().map(d => DSHORT[d]).join('-')}.xlsx`; const r = await saveAs(name, buildXlsx); toast(SAVE_MSG[r] + (r === 'cancelled' ? '' : ': ' + name)); }
-  catch(err) { toast('Σφάλμα: ' + (err.message || err)); }
-  finally { b.disabled = false; }
-});
-$('copy').addEventListener('click', async () => {
-  const t = changesText(A.res[A.day]);
-  try { await navigator.clipboard.writeText(t); toast('Αντιγράφηκαν οι αλλαγές της μέρας'); }
-  catch(e) { prompt('Αντέγραψε το κείμενο:', t); }
-});
-$('print').addEventListener('click', () => window.print());
 async function goEfimeries(){
   const b = $('nextBtn'); b.disabled = true; b.textContent = 'Ετοιμασία…';
   try { if (await publish()) location.href = '../efimeries/?from=sy'; }
@@ -1378,6 +1275,7 @@ async function goEfimeries(){
   finally { b.disabled = false; renderFlow(); }
 }
 $('nextBtn').addEventListener('click', goEfimeries);
+window.suiteNext = () => goEfimeries();   // το «Επόμενο» της μπάρας ετοιμάζει πρώτα το πρόγραμμα
 $('skipBtn').addEventListener('click', () => {
   if (!confirm('Χωρίς συμπύκνωση αυτή την εβδομάδα; Αφαιρούνται οι απόντες και οι Εφημερίες παίρνουν το κανονικό πρόγραμμα.')) return;
   A.absent = []; A.edits = {}; A.sel = null; fillSelect(); render(); goEfimeries();

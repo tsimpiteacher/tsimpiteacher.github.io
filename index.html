@@ -68,6 +68,15 @@
   .dot.ok{background:var(--green); color:#fff;} .dot.half{background:#F2B233; color:#2A1D00;} .dot.bad{background:var(--red); color:#fff;}
   .dlall{font:inherit; font-weight:700; font-size:14px; color:#fff; background:var(--blue-deep); border:0; border-radius:10px; padding:10px 16px; cursor:pointer; display:inline-flex; gap:8px; align-items:center;}
   .dlall:disabled{opacity:.5; cursor:default;}
+  .week-btns{display:flex; flex-wrap:wrap; gap:8px;}
+  .dlall.nw{background:var(--teal); position:relative; overflow:hidden;}
+  .dlall.nw input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+  .steps a.step{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; background:var(--bg); font-size:13.5px; line-height:1.35; color:inherit; text-decoration:none; height:100%;}
+  .steps a.step:hover{outline:2px solid var(--line);}
+  .steps li{padding:0 !important; background:none !important; display:block !important;}
+  .steps a.step b{display:block; font-size:14px; color:var(--ink);}
+  .steps a.step span.t{color:var(--muted);}
+  .steps a.step span.t.bad{color:var(--red); font-weight:600;}
   .dlall:focus-visible{outline:3px solid var(--blue); outline-offset:2px;}
   .dlmsg{font-size:13px; color:var(--muted); margin-top:10px;}
   .dlmsg a{color:var(--blue); font-weight:600;}
@@ -120,13 +129,19 @@
   </header>
 
   <main>
-    <section class="week" id="week" hidden aria-labelledby="weekTitle">
+    <section class="week" id="week" aria-labelledby="weekTitle">
       <div class="week-h">
-        <div><h2 id="weekTitle">Η εβδομάδα μου</h2><p class="sub" id="weekSub"></p></div>
-        <button type="button" class="dlall" id="dlAll" disabled>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
-          <span>Λήψη όλων</span>
-        </button>
+        <div><h2 id="weekTitle">Η εβδομάδα μου</h2><p class="sub" id="weekSub">Ξεκίνα ανεβάζοντας το ωρολόγιο πρόγραμμα της εβδομάδας.</p></div>
+        <div class="week-btns">
+          <label class="dlall nw" title="Ανέβασε το ωρολόγιο της νέας εβδομάδας· καθαρίζουν οι απόντες και οι χειροκίνητες αλλαγές της προηγούμενης">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Νέα εβδομάδα…</span><input type="file" id="newWeek" accept=".xlsx">
+          </label>
+          <button type="button" class="dlall" id="dlAll" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+            <span>Λήψη όλων</span>
+          </button>
+        </div>
       </div>
       <ol class="steps" id="steps"></ol>
       <div class="dlmsg" id="dlMsg" hidden></div>
@@ -136,7 +151,7 @@
         <div class="card-top"><div class="ico" aria-hidden="true"><img src="sympyknosi/icon-192.png" alt="" width="56" height="56"></div></div>
         <h2>Συμπύκνωση προγράμματος</h2>
         <p>Ξεκινάς από εδώ: δηλώνεις ποιοι λείπουν και ποιες μέρες, τα μαθήματα ανεβαίνουν προς την 1η ώρα, και το συμπυκνωμένο πρόγραμμα περνά στις Εφημερίες και στο ΓΡ. Αν δεν λείπει κανείς, πας κατευθείαν στις Εφημερίες.</p>
-        <div class="tags"><span class="tag step">Βήμα 1</span><span class="tag">Πρόγραμμα → Excel ημέρας</span><span class="tag">Στον browser σου</span></div>
+        <div class="tags"><span class="tag step">Βήμα 1</span><span class="tag">Απόντες → πρόγραμμα εβδομάδας</span><span class="tag">Στον browser σου</span></div>
         <div class="status" hidden></div>
         <div class="sync" hidden></div>
         <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
@@ -313,29 +328,58 @@
     s.hidden = false;
   }
 
-  if (!tt && !efHas && !grHas) return;           // τίποτα ακόμα σε αυτή τη συσκευή
-  var week = document.getElementById('week'); week.hidden = false;
-  var ttName = tt && tt.fname, grSame = !ttName || !gr || gr.fname === ttName;
-  var syOn = !!(tt && tt.from === 'sy' && tt.sy), syDays = syOn && tt.sy.dayNames ? tt.sy.dayNames : [];
+  // ---- βήματα: 1 Συμπύκνωση → 2 Εφημερίες → 3 ΓΡ → 4 Αναπληρώσεις, με ένδειξη όταν κάτι χρειάζεται ξαναπέρασμα ----
+  var syOn = !!(tt && tt.from === 'sy' && tt.sy), syDays = syOn && Array.isArray(tt.sy.dayNames) ? tt.sy.dayNames : [];
+  var gaps = syOn && Array.isArray(tt.sy.gaps) ? tt.sy.gaps : [], anHas = gaps.length > 0;
+  var usedEf = num('suite-tt-used-ef'), usedGr = num('suite-tt-used-gr');
+  var efStale = !!(tt && efHas && tt.from !== 'ef' && usedEf < (tt.at || 0)), grStale = !!(tt && grHas && tt.from !== 'gr' && usedGr < (tt.at || 0));
+  var DN = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή'];
+  var gapDays = []; gaps.forEach(function (g) { if (gapDays.indexOf(g.day) < 0) gapDays.push(g.day); }); gapDays.sort();
+  var anDone = anHas && Array.isArray(ah) && gapDays.every(function (d) { return ah.some(function (e) { var x = new Date(e.date); return (x.getDay() + 6) % 7 === d && e.rows.some(function (r) { return r.gap; }) && (Date.now() - x.getTime()) < 10 * 864e5; }); });
+  var STALE = 'Άλλαξε το πρόγραμμα — άνοιξέ τες για ενημέρωση';
   var steps = [
-    { st: tt ? 'ok' : 'none', t: 'Ωρολόγιο πρόγραμμα', d: tt ? esc(tt.fname || 'αρχείο') + ' · ' + when(tt.at) : 'Ανέβασέ το σε μία από τις εφαρμογές' },
-    { st: syOn ? 'ok' : 'none', t: 'Συμπύκνωση', d: syOn ? (syDays.length ? 'Συμπυκνωμένες: ' + esc(syDays.join(', ')) : 'Χωρίς συμπύκνωση') + ' · ' + when(tt.at) : 'Δεν έχει γίνει (ή δεν χρειάζεται)' },
-    { st: efHas ? (dlEf >= ((efs && efs.at) || 0) - 5000 && dlEf ? 'ok' : 'half') : 'none', t: 'Εφημερίες',
-      d: efHas ? ((efs.payload.dateLabel ? 'Εβδομάδα ' + esc(efs.payload.dateLabel) + ' · ' : '') + (dlEf ? 'Word: ' + when(dlEf) : 'Το Word δεν έχει κατέβει')) : 'Δεν έχουν βγει ακόμα' },
-    { st: grHas ? (!grSame ? 'bad' : dlGr && dlGr >= (gr.at || 0) - 5000 ? 'ok' : 'half') : 'none', t: 'ΓΡ',
-      d: grHas ? (!grSame ? 'Είναι για άλλο πρόγραμμα (' + esc(gr.fname) + ')' : (dlGr ? 'Excel: ' + when(dlGr) : 'Το Excel δεν έχει κατέβει')) : 'Δεν έχουν βγει ακόμα' },
-    { st: anToday ? 'ok' : 'none', t: 'Αναπληρώσεις σήμερα', d: anToday ? anToday.rows.filter(function (r) { return r.cover; }).length + ' ώρες καλύφθηκαν' : 'Καμία καταχώριση για σήμερα' }
+    { href: 'sympyknosi/', st: syOn ? 'ok' : tt ? 'half' : 'none', t: 'Συμπύκνωση',
+      d: syOn ? (syDays.length ? 'Συμπυκνωμένες: ' + esc(syDays.join(', ')) : 'Χωρίς συμπύκνωση') + ' · ' + when(tt.at) : tt ? 'Δήλωσε απόντες ή πάτα «Χωρίς συμπύκνωση»' : 'Ανέβασε πρώτα το πρόγραμμα (Νέα εβδομάδα)' },
+    { href: 'efimeries/', st: efStale ? 'bad' : efHas ? (dlEf >= ((efs && efs.at) || 0) - 5000 && dlEf ? 'ok' : 'half') : 'none', t: 'Εφημερίες', bad: efStale,
+      d: efStale ? STALE : efHas ? ((efs.payload.dateLabel ? 'Εβδομάδα ' + esc(efs.payload.dateLabel) + ' · ' : '') + (dlEf ? 'Word: ' + when(dlEf) : 'Το Word δεν έχει κατέβει')) : 'Δεν έχουν βγει ακόμα' },
+    { href: 'gr/', st: grStale ? 'bad' : grHas ? (dlGr && dlGr >= (gr.at || 0) - 5000 ? 'ok' : 'half') : 'none', t: 'ΓΡ', bad: grStale,
+      d: grStale ? STALE.replace('τες', 'το') : grHas ? (dlGr ? 'Excel: ' + when(dlGr) : 'Το Excel δεν έχει κατέβει') : 'Δεν έχουν βγει ακόμα' },
+    { href: 'anaplirwseis/', st: anHas ? (anDone ? 'ok' : 'half') : anToday ? 'ok' : 'none', t: 'Αναπληρώσεις',
+      d: anHas ? gaps.length + (gaps.length === 1 ? ' κενό' : ' κενά') + ' από τη Συμπύκνωση (' + gapDays.map(function (d) { return DN[d]; }).join(', ') + ')' + (anDone ? ' · καλύφθηκαν' : ' · θέλουν αναπληρωτή')
+        : anToday ? 'Σήμερα: ' + anToday.rows.filter(function (r) { return r.cover; }).length + ' ώρες καλύφθηκαν' : 'Κανένα κενό · μόνο για έκτακτες απουσίες' }
   ];
   var MARK = { ok: '✓', half: '!', bad: '!', none: '' };
   document.getElementById('steps').innerHTML = steps.map(function (s, i) {
-    return '<li><span class="dot ' + s.st + '" aria-hidden="true">' + (MARK[s.st] || (i + 1)) + '</span><div><b>' + s.t + '</b><span class="t">' + s.d + '</span></div></li>';
+    return '<li><a class="step" href="' + s.href + '"><span class="dot ' + s.st + '" aria-hidden="true">' + (MARK[s.st] || (i + 1)) + '</span><div><b>' + (i + 1) + '. ' + s.t + '</b><span class="t' + (s.bad ? ' bad' : '') + '">' + s.d + '</span></div></a></li>';
   }).join('');
-  document.getElementById('weekSub').textContent = [steps[0], steps[2], steps[3]].every(function (s) { return s.st === 'ok'; }) ? 'Όλα έτοιμα για αυτή την εβδομάδα.' : 'Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή.';
+  var anyStale = efStale || grStale;
+  document.getElementById('weekSub').innerHTML = !tt ? 'Ξεκίνα με «Νέα εβδομάδα»: ανέβασε το ωρολόγιο πρόγραμμα.'
+    : anyStale ? '<b style="color:var(--red)">Κάτι άλλαξε στη Συμπύκνωση — άνοιξε όσα έχουν «!» για να ενημερωθούν.</b>'
+    : (steps[1].st === 'ok' && steps[2].st === 'ok' && (!anHas || anDone) ? 'Όλα έτοιμα για αυτή την εβδομάδα. ' : 'Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή. ') + 'Πρόγραμμα: <b>' + esc(tt.fname || '') + '</b>';
 
-  // «Λήψη όλων»: φορτώνει αθόρυβα τις δύο εφαρμογές και ζητάει από την καθεμία το αρχείο της
+  // ---- «Νέα εβδομάδα»: ένα ανέβασμα για όλες· καθαρίζουν απόντες/χειροκίνητες αλλαγές της προηγούμενης ----
+  document.getElementById('newWeek').addEventListener('change', function (e) {
+    var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (!/\.xlsx$/i.test(f.name)) { alert('Χρειάζεται αρχείο .xlsx'); return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      var u = new Uint8Array(rd.result), b = ''; for (var i = 0; i < u.length; i += 0x8000) b += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+      var rec = { fname: f.name, at: Date.now(), from: 'hub', newWeek: true, file: btoa(b) };
+      try {
+        localStorage.setItem('suite-timetable-v1', JSON.stringify(rec));
+        var dr = get('sym-draft-v1'); if (dr) { dr.absent = []; dr.edits = {}; localStorage.setItem('sym-draft-v1', JSON.stringify(dr)); }
+        var ad = get('anapl-draft-v1'); if (ad) { ad.absent = []; ad.over = {}; localStorage.setItem('anapl-draft-v1', JSON.stringify(ad)); }
+      } catch (err) { alert('Δεν χωράει το αρχείο στη μνήμη του browser.'); return; }
+      location.href = 'sympyknosi/';
+    };
+    rd.readAsArrayBuffer(f);
+  });
+  if (!tt && !efHas && !grHas) { document.getElementById('dlAll').disabled = true; return; }
+
+  // «Λήψη όλων»: φορτώνει αθόρυβα τις εφαρμογές και ζητάει από την καθεμία τα αρχεία της
   var btn = document.getElementById('dlAll'), msg = document.getElementById('dlMsg');
-  btn.disabled = !(efHas || grHas);
-  btn.title = 'Κατεβάζει μαζί το Word των εφημεριών και το Excel των ΓΡ (σε ένα .zip)';
+  btn.disabled = !(efHas || grHas || anHas);
+  btn.title = 'Κατεβάζει μαζί το Word των εφημεριών, το Excel των ΓΡ' + (anHas ? ' και το Word των αναπληρώσεων' : '') + ' (σε ένα .zip)';
   function frame(src) {
     return new Promise(function (ok, no) {
       var f = document.createElement('iframe');
@@ -369,14 +413,16 @@
     pickZip().then(function (h) { handle = h; run(); }, function () { msg.textContent = 'Η αποθήκευση ακυρώθηκε.'; msg.hidden = false; });
     function run() {
     btn.disabled = true; btn.querySelector('span').textContent = 'Ετοιμασία…'; msg.hidden = true;
-    var jobs = [efHas ? frame('efimeries/') : null, grHas ? frame('gr/') : null];
+    var LBL = ['Εφημερίες', 'ΓΡ', 'Αναπληρώσεις'];
+    var jobs = [efHas ? frame('efimeries/') : null, grHas ? frame('gr/') : null, anHas ? frame('anaplirwseis/') : null];
     Promise.all(jobs.map(function (j) { return j ? j.then(function (x) { return x; }, function (e) { return { err: e }; }) : null; })).then(function (res) {
       var files = [], errs = [];
       res.forEach(function (x, i) {
         if (!x) return;
         if (x.f) x.f.remove();
-        if (x.err || !x.r) errs.push((i ? 'ΓΡ' : 'Εφημερίες') + (x.err ? ': ' + (x.err.message || x.err) : ': δεν υπάρχει έτοιμη κατανομή'));
-        else files.push(x.r);
+        var r = x.r && !Array.isArray(x.r) ? [x.r] : (x.r || []);
+        if (x.err || !r.length) errs.push(LBL[i] + (x.err ? ': ' + (x.err.message || x.err) : ': δεν υπάρχει κάτι έτοιμο'));
+        else r.forEach(function (f) { files.push(f); });
       });
       if (!files.length) throw new Error(errs.join(' · '));
       return loadZip().then(function () {
