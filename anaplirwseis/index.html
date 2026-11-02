@@ -66,6 +66,11 @@ td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
 td.per{font-weight:800;font-variant-numeric:tabular-nums;width:3.5em;white-space:nowrap}
 td.cls{font-weight:650;white-space:nowrap}
 td select{width:100%;max-width:330px}
+.gapbox{margin-top:12px;padding:10px 12px;border-radius:11px;background:var(--bad-soft);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13.5px}
+.gapbox[hidden]{display:none}
+.gapbox .btn{min-height:32px;padding:5px 10px;font-size:13px}
+.gapbox .btn.on{outline:2px solid var(--bad);outline-offset:1px}
+.gapl{font-style:italic}
 .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .t0{background:var(--gr-soft);color:var(--gr)} .t1{background:var(--ok-soft);color:var(--ok)} .t2{background:var(--warn-soft);color:var(--warn)} .tn{background:var(--soft);color:var(--muted)} .tx{background:var(--bad-soft);color:var(--bad)}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
@@ -300,6 +305,7 @@ td select{width:100%;max-width:330px}
       </div>
       <div class="chips" id="absList"></div>
       <p class="sub" id="dayNote" style="margin:10px 0 0"></p>
+      <div class="gapbox" id="gapBox" hidden></div>
     </div>
 
     <div class="grid2" style="margin-top:16px">
@@ -457,6 +463,16 @@ function defaultDate(){ const d = new Date(); if (d.getHours() >= 15) d.setDate(
 
 const A = { model:null, srcLabel:'', grSrc:'', gr:[], par:[], duty:null, date:defaultDate(), absent:[], over:{}, seed:1, rows:[] };
 
+/* ---------- κενά που άφησε η Συμπύκνωση (βήμα 1) ----------
+   Ισχύουν όταν το πρόγραμμα εδώ είναι το συμπυκνωμένο της Συμπύκνωσης. Για τη μέρα της εβδομάδας που διάλεξες
+   μπαίνουν μόνα τους στις ώρες προς κάλυψη. */
+const isCompactName = n => /συμπυκν/i.test(String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''));   // χωρίς τόνους: «συμπύκνωση»
+function syGaps(){
+  const t = ls.get(P.tt);
+  if (!t || t.from !== 'sy' || !t.sy || !Array.isArray(t.sy.gaps) || !isCompactName(A.fname)) return [];
+  return t.sy.gaps.filter(g => g && Number.isInteger(g.day) && Number.isInteger(g.period) && g.cls);
+}
+
 /* ---------- πηγή: πρόγραμμα + ΓΡ από τις άλλες εφαρμογές της σουίτας ---------- */
 async function loadSource(manual){
   let buf = null, fname = '', plan = null;
@@ -524,6 +540,10 @@ function tierOf(ui, si, d, absentSet){
 function needs(){
   const m = A.model, d = dayIndexOf(A.date), out = [];
   if (d < 0) return out;
+  syGaps().filter(g => g.day === d).forEach(g => {
+    const si = m.slots.findIndex(s => s.day === d && s.period === g.period); if (si < 0) return;
+    out.push({ si, period: g.period, cls: g.cls, ai: -1, gap: true, by: g.by || [], k: `gap:${g.cls}:${g.period}` });
+  });
   A.absent.forEach(ai => {
     const t = m.teachers[ai];
     m.slots.forEach((s, si) => { if (s.day === d && t.cells[si] === 'L') out.push({ si, period: s.period, cls: t.labels[si] || '', ai, k: `${ai}:${si}` }); });
@@ -558,6 +578,7 @@ function propose(){
 
 /* ---------- προβολή ---------- */
 const TIER = [['t0','ΓΡ'], ['t1','κενό'], ['t2','άκρη'], ['tx','εκτός κανόνων']];
+const absLabel = r => r.ai >= 0 ? A.model.teachers[r.ai].name : 'Κενό συμπύκνωσης' + (r.by && r.by.length ? ` (${r.by.join(', ')})` : '');
 function fillAbsentSelect(){
   const sel = $('addAbs'), m = A.model, d = dayIndexOf(A.date);
   const opts = m.teachers.map((t, i) => ({ t, i })).filter(o => !o.t.staff && !A.absent.includes(o.i))
@@ -579,7 +600,8 @@ function render(){
   $('planTitle').textContent = 'Αναπληρώσεις · ' + (d >= 0 ? niceDate(A.date) : '—');
   const rows = d >= 0 ? propose() : (A.rows = []);
   const host = $('plan');
-  if (!A.absent.length) host.innerHTML = '<p class="sub" style="margin:8px 0 0">Δεν έχεις δηλώσει απόντες.</p>';
+  renderGaps();
+  if (!A.absent.length && !rows.length) host.innerHTML = '<p class="sub" style="margin:8px 0 0">Δεν έχεις δηλώσει απόντες.</p>';
   else if (!rows.length) host.innerHTML = '<p class="sub" style="margin:8px 0 0">Οι απόντες δεν έχουν μάθημα αυτή τη μέρα.</p>';
   else {
     const names = m.teachers;
@@ -590,7 +612,7 @@ function render(){
           .map(c => { const n = (A.mc[key(names[c.ui].name)] || 0); return `<option value="${esc(names[c.ui].name)}"${c.ui === r.cover ? ' selected' : ''}>${esc(names[c.ui].name)} · ${TIER[c.tier][1]} · ${n} τον μήνα</option>`; }));
       if (r.cover >= 0 && !r.cands.some(c => c.ui === r.cover)) opts.push(`<option value="${esc(names[r.cover].name)}" selected>${esc(names[r.cover].name)} · εκτός κανόνων</option>`);
       const tg = r.cover < 0 ? '<span class="tag tn">κενό τμήμα</span>' : `<span class="tag ${TIER[r.tier][0]}">${TIER[r.tier][1]}</span>`;
-      h += `<tr><td class="per">${r.period}η</td><td class="cls">${esc(r.cls)}</td><td class="abs">${esc(names[r.ai].name)}</td><td class="cov"><select data-k="${r.k}" aria-label="Αναπληρωτής για ${r.period}η ώρα ${esc(r.cls)}">${opts.join('')}</select></td><td class="tg">${tg}</td></tr>`;
+      h += `<tr><td class="per">${r.period}η</td><td class="cls">${esc(r.cls)}</td><td class="abs">${r.gap ? `<span class="gapl">${esc(absLabel(r))}</span>` : esc(names[r.ai].name)}</td><td class="cov"><select data-k="${r.k}" aria-label="Αναπληρωτής για ${r.period}η ώρα ${esc(r.cls)}">${opts.join('')}</select></td><td class="tg">${tg}</td></tr>`;
     });
     host.innerHTML = h + '</tbody></table>';
   }
@@ -599,6 +621,15 @@ function render(){
   ['redo','saveDay','word'].forEach(id => $(id).disabled = !rows.length);
   renderMonth();
   ls.set(P.draft, { date: ymd(A.date), absent: A.absent.map(i => m.teachers[i].name), over: A.over, seed: A.seed });
+}
+function renderGaps(){
+  const box = $('gapBox'); if (!box) return;
+  const gs = syGaps(); box.hidden = !gs.length; if (!gs.length) { box.innerHTML = ''; return; }
+  const byDay = {}; gs.forEach(g => { byDay[g.day] = (byDay[g.day] || 0) + 1; });
+  const cur = dayIndexOf(A.date);
+  box.innerHTML = '<b>Κενά από τη Συμπύκνωση:</b> ' + Object.keys(byDay).map(Number).sort().map(d =>
+    `<button type="button" class="btn${d === cur ? ' on' : ''}" data-gday="${d}">${DAYS[d]} · ${byDay[d]} ${byDay[d] === 1 ? 'κενό' : 'κενά'}</button>`).join(' ') +
+    '<span class="sub" style="margin:0"> Μπαίνουν μόνα τους στη μέρα τους· πρόσθεσε εδώ μόνο τις απουσίες της τελευταίας στιγμής.</span>';
 }
 function saved(){ const e = hist().find(x => x.date === ymd(A.date)); return e && JSON.stringify(e.rows) === JSON.stringify(rowsForSave()); }
 function renderMonth(){
@@ -615,7 +646,7 @@ function renderMonth(){
 }
 
 /* ---------- αποθήκευση / Word ---------- */
-function rowsForSave(){ const m = A.model; return A.rows.map(r => ({ period: r.period, cls: r.cls, absent: m.teachers[r.ai].name, cover: r.cover >= 0 ? m.teachers[r.cover].name : '', tier: r.tier })); }
+function rowsForSave(){ const m = A.model; return A.rows.map(r => ({ period: r.period, cls: r.cls, absent: absLabel(r), gap: !!r.gap, cover: r.cover >= 0 ? m.teachers[r.cover].name : '', tier: r.tier })); }
 function saveDay(quiet){
   if (!A.rows.length) return;
   const date = ymd(A.date), list = hist().filter(e => e.date !== date);
@@ -638,7 +669,7 @@ function buildDocx(){
   const m = A.model, W = [900, 1300, 2700, 2700, 1900];
   let rows = `<w:tr><w:trPr><w:tblHeader/><w:trHeight w:val="420"/></w:trPr>${['Ώρα','Τμήμα','Απών/ούσα','Αναπληρωτής/τρια','Υπογραφή'].map((t, i) => cell(t, W[i], { b: true, fill: 'DDE2F5' })).join('')}</w:tr>`;
   A.rows.forEach(r => {
-    rows += `<w:tr><w:trPr><w:trHeight w:val="440"/></w:trPr>${cell(r.period + 'η', W[0], { b: true })}${cell(r.cls, W[1])}${cell(m.teachers[r.ai].name, W[2], { align: 'left' })}${cell(r.cover >= 0 ? m.teachers[r.cover].name : '—', W[3], { align: 'left', b: r.cover >= 0 })}${cell('', W[4])}</w:tr>`;
+    rows += `<w:tr><w:trPr><w:trHeight w:val="440"/></w:trPr>${cell(r.period + 'η', W[0], { b: true })}${cell(r.cls, W[1])}${cell(absLabel(r), W[2], { align: 'left' })}${cell(r.cover >= 0 ? m.teachers[r.cover].name : '—', W[3], { align: 'left', b: r.cover >= 0 })}${cell('', W[4])}</w:tr>`;
   });
   const grid = W.map(w => `<w:gridCol w:w="${w}"/>`).join('');
   const body = (m.title ? para(m.title.split(' · ')[0], { align: 'center', b: true, sz: 24 }) : '') +
@@ -699,12 +730,17 @@ $('word').addEventListener('click', async () => {
   catch(e) { toast('Σφάλμα: ' + (e.message || e)); }
   finally { b.disabled = false; }
 });
+$('gapBox').addEventListener('click', e => {   // πήγαινε στην πλησιέστερη (από σήμερα) ημερομηνία με αυτή τη μέρα της εβδομάδας
+  const b = e.target.closest('[data-gday]'); if (!b) return;
+  const want = +b.dataset.gday, d = defaultDate(); while (dayIndexOf(d) !== want) d.setDate(d.getDate() + 1);
+  A.date = d; A.over = {}; const h = hist().find(x => x.date === ymd(d)); if (h) restoreDay(h); else { fillAbsentSelect(); render(); }
+});
 $('days').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; const h = hist().find(x => x.date === b.dataset.day); if (h) restoreDay(h); });
 function restoreDay(h){
   const m = A.model; A.date = parseYmd(h.date);
   A.absent = (h.absent || []).map(n => m.teachers.findIndex(t => key(t.name) === key(n))).filter(i => i >= 0);
   A.over = {};
-  needs().forEach(r => { const row = h.rows.find(x => x.period === r.period && key(x.absent) === key(m.teachers[r.ai].name)); if (row) A.over[r.k] = row.cover; });
+  needs().forEach(r => { const row = h.rows.find(x => x.period === r.period && (r.gap ? x.gap && x.cls === r.cls : key(x.absent) === key(m.teachers[r.ai].name))); if (row) A.over[r.k] = row.cover; });
   fillAbsentSelect(); render();
 }
 $('file').addEventListener('change', async e => { const f = e.target.files[0]; if (f) await loadSource({ buf: await f.arrayBuffer(), name: f.name }); e.target.value = ''; });

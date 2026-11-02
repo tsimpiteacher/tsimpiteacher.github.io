@@ -382,7 +382,7 @@ tr.chg td.nm{color:var(--mv)}
 
       <div class="flow no-print" id="flow">
         <ol class="fsteps" aria-label="Σειρά εργασιών">
-          <li class="on"><b>1</b>Συμπύκνωση</li><li><b>2</b>Εφημερίες</li><li><b>3</b>ΓΡ</li>
+          <li class="on"><b>1</b>Συμπύκνωση</li><li><b>2</b>Εφημερίες</li><li><b>3</b>ΓΡ</li><li><b>4</b>Αναπληρώσεις</li>
         </ol>
         <p class="ftxt" id="flowTxt"></p>
         <div class="fbtns">
@@ -753,7 +753,7 @@ const A = { model:null, fname:'', baseAt:0, grSrc:'', gr:null, absent:[], pins:n
 /* ---------- πηγή: το αρχικό πρόγραμμα της εβδομάδας ----------
    Η Συμπύκνωση είναι το 1ο βήμα, άρα δουλεύει πάντα πάνω στο αρχικό πρόγραμμα (με όσα ΓΡ έχει το ίδιο το αρχείο),
    όχι πάνω σε κατανομή ΓΡ ή σε πρόγραμμα που έχει ήδη συμπυκνώσει η ίδια. */
-const isCompactName = n => /συμπυκν/i.test(String(n || ''));
+const isCompactName = n => /συμπυκν/i.test(String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''));   // χωρίς τόνους: «συμπύκνωση»
 function saveBase(fname, file, srcAt){ return ls.set(K.base, { fname, file, srcAt, at: Date.now() }); }
 async function loadSource(manual){
   let buf = null, fname = '', baseAt = 0;
@@ -786,7 +786,7 @@ async function loadSource(manual){
 }
 
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
-const SIGV = 6;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
+const SIGV = 7;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort(), a.days.map(d => hoursOf(a, d))]).sort();
   return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts, A.parLocks]);
@@ -794,7 +794,10 @@ function sigNow(){
 function compactName(fname, days){ return String(fname || 'Πρόγραμμα.xlsx').replace(/\.xlsx$/i, '') + ` (συμπύκνωση ${days.map(d => DSHORT[d]).join('-')}).xlsx`; }
 function syInfo(days){
   return { days, dayNames: days.map(d => DAYS[d]), absent: Object.fromEntries(days.map(d => [DAYS[d], absentNames(d)])),
-    moved: days.reduce((n, d) => n + (A.res[d] ? A.res[d].moved.length : 0), 0), holes: days.reduce((n, d) => n + (A.res[d] ? A.res[d].holes.length : 0), 0) };
+    moved: days.reduce((n, d) => n + (A.res[d] ? A.res[d].moved.length : 0), 0), holes: days.reduce((n, d) => n + (A.res[d] ? A.res[d].holes.length : 0), 0),
+    // κενά που μένουν, για τις Αναπληρώσεις: μέρα, ώρα, τμήμα και ποιοι απόντες είχαν μάθημα σε αυτό το τμήμα εκείνη τη μέρα
+    gaps: days.flatMap(d => { const r = A.res[d]; return r ? r.holes.map(x => ({ day: d, period: x.p, cls: x.c,
+      by: [...new Set(r.removed.filter(e => e.cls.includes(x.c)).map(e => A.model.teachers[e.ti].name))] })) : []; }) };
 }
 // Ίδιο αρχείο με το αρχικό· αλλάζουν μόνο τα κελιά των συμπυκνωμένων ημερών. Οι απόντες εκείνη τη μέρα μένουν κενοί και γκρι,
 // ώστε οι Εφημερίες να μην τους βάλουν σε βάρδια και το ΓΡ να τους θεωρεί εκτός.
@@ -879,7 +882,7 @@ function renderFlow(pending){
   $('nextBtn').textContent = days.length ? 'Συνέχεια στις Εφημερίες →' : 'Χωρίς συμπύκνωση → Εφημερίες';
   $('flowTxt').innerHTML = days.length
     ? `Οι Εφημερίες και το ΓΡ θα πάρουν το πρόγραμμα με συμπυκνωμένη ${days.length === 1 ? 'τη' : 'τις'} <b>${days.map(d => DAYS[d]).join(', ')}</b>· οι απόντες δεν μπαίνουν σε εφημερία εκείνες τις μέρες.` +
-      (holes ? ` <span style="color:var(--bad)">Μένουν ${holes} ${holes === 1 ? 'κενό' : 'κενά'} για αναπλήρωση.</span>` : '') + (sent ? ' <span style="color:var(--ok)">✓ Έτοιμο</span>' : '')
+      (holes ? ` <span style="color:var(--bad)">Μένουν ${holes} ${holes === 1 ? 'κενό' : 'κενά'} — θα εμφανιστούν μόνα τους στις Αναπληρώσεις (βήμα 4).</span>` : '') + (sent ? ' <span style="color:var(--ok)">✓ Έτοιμο</span>' : '')
     : 'Δεν λείπει κανείς; Οι Εφημερίες θα πάρουν το κανονικό πρόγραμμα της εβδομάδας.';
 }
 
