@@ -536,6 +536,8 @@ function rand(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>
  * Συμπύκνωση μιας ημέρας.
  *   ctx.absent  : Set με δείκτες απόντων εκπαιδευτικών (όλη τη μέρα)
  *   ctx.absentHours : { δείκτης: Set ωρών } — απόντες μόνο κάποιες ώρες
+ *   ctx.parentAt : { δείκτης: ώρα } — ώρα γονέων που όρισες στο ΓΡ: ο καθηγητής μένει ελεύθερος τότε
+ *                  (αν είχε μάθημα εκείνη την ώρα, το μάθημα πρέπει να μετακινηθεί — «σύγκρουση», πρώτη προτεραιότητα)
  *   ctx.gr      : πίνακας (ανά εκπαιδευτικό) με Set θέσεων ΓΡ — αν λείπει, από το αρχείο
  *   ctx.opts    : { useGR, notEarlier, keepDouble }
  *   ctx.pins    : Set με id μαθημάτων που ο αλγόριθμος δεν μετακινεί
@@ -570,6 +572,7 @@ function compactDay(model, d, ctx) {
       } else if (c === 'P') row[p] = 2;
       else if (isGr && row[p] === 0) row[p] = 1;
     });
+    if (ctx.parentAt && ctx.parentAt[ti] != null) row[ctx.parentAt[ti]] = 2;
     base[ti] = row;
   });
   const start = {}, origLast = {};
@@ -609,16 +612,17 @@ function compactDay(model, d, ctx) {
   }
   function measure(G) {
     let holes = 0, endSum = 0, moved = 0, down = 0, early = 0, grUse = 0;
+    const conflicts = G.st.filter(e => base[e.ti][e.p] === 2);   // μάθημα σε ώρα γονέων
     const holeList = [];
     classes.forEach(c => {
       const L = G.lastOf(c); endSum += L;
       for (let p = start[c]; p < L; p++) if (!G.at(c, p).length) { holes++; holeList.push({ c, p }); }
     });
     G.st.forEach(e => { if (e.p !== e.p0) { moved++; if (e.p > e.p0) down++; if (e.p < firstT[e.ti]) early++; if (base[e.ti][e.p] === 1) grUse++; } });
-    return { holes, holeList, endSum, moved, down, early, grUse, key: [holes, endSum, moved, down, early, grUse] };
+    return { holes, holeList, endSum, moved, down, early, grUse, conflicts, key: [conflicts.length, holes, endSum, moved, down, early, grUse] };
   }
   const better = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
-  const energy = m => m.holes * 40 + m.endSum * 6 + m.moved * 2 + m.down * 2 + m.early + m.grUse;
+  const energy = m => m.conflicts.length * 400 + m.holes * 40 + m.endSum * 6 + m.moved * 2 + m.down * 2 + m.early + m.grUse;
 
   // 1) άπληστο πέρασμα
   function greedy(seed, natural) {
@@ -653,7 +657,7 @@ function compactDay(model, d, ctx) {
   function anneal(G, seed, iters) {
     const rnd = rand(seed), movable = G.st.filter(x => !fixedOf(x));
     let cur = measure(G), E = energy(cur), best = cur, bestPos = G.st.map(x => x.p);
-    if (!movable.length || !cur.holes && !cur.moved) return bestPos;
+    if (!movable.length || !cur.holes && !cur.moved && !cur.conflicts.length) return bestPos;
     const T0 = 25, T1 = 0.3;
     for (let it = 0; it < iters; it++) {
       const T = T0 * Math.pow(T1 / T0, it / iters);
@@ -705,7 +709,7 @@ function compactDay(model, d, ctx) {
       if (!best || better(m.key, bm.key)) { best = g; bm = m; }
       if (bm.holes === 0 && a >= 20) break;
     }
-    if (bm.holes || ctx.improveAll) {   // έμειναν κενά: βελτίωση από την καλύτερη άπληστη λύση
+    if (bm.holes || bm.conflicts.length || ctx.improveAll) {   // έμειναν κενά: βελτίωση από την καλύτερη άπληστη λύση
       const n = lessons.length, it = 3000 + n * 150, start0 = best.st.map(x => x.p);
       [1, 2, 3].forEach(k => {
         const pos = anneal(State(start0), 104729 * k + d * 7, it), g = State(pos), m = measure(g);
@@ -718,7 +722,7 @@ function compactDay(model, d, ctx) {
   classes.forEach(c => { newLast[c] = G.lastOf(c); });
   return {
     d, P, classes, base, firstT, lastT, start, origLast, newLast, layoutBad,
-    entries: G.st, removed, unknown, holes: fin.holeList,
+    entries: G.st, removed, unknown, holes: fin.holeList, conflicts: fin.conflicts,
     moved: G.st.filter(e => e.p !== e.p0).sort((a, b) => a.p0 - b.p0 || clsSort(a.cls[0], b.cls[0])),
     at: G.at, blockOf: G.blockOf,
   };
@@ -744,7 +748,7 @@ const surname = n => String(n).split(' ')[0];
 const ord = p => p + 'η';
 
 // Κατάσταση: απόντες ως { name: [μέρες] }, καρφωμένα μαθήματα ως "μέρα|όνομα|ώρα", κανόνες.
-const A = { model:null, fname:'', baseAt:0, grSrc:'', gr:null, absent:[], pins:new Set(), edits:{}, sel:null, cache:{}, opts:{ useGR:true, notEarlier:false, keepDouble:false }, day:-1, view:'cls', res:{} };
+const A = { model:null, fname:'', baseAt:0, grSrc:'', gr:null, absent:[], pins:new Set(), parLocks:[], edits:{}, sel:null, cache:{}, opts:{ useGR:true, notEarlier:false, keepDouble:false }, day:-1, view:'cls', res:{} };
 
 /* ---------- πηγή: το αρχικό πρόγραμμα της εβδομάδας ----------
    Η Συμπύκνωση είναι το 1ο βήμα, άρα δουλεύει πάντα πάνω στο αρχικό πρόγραμμα (με όσα ΓΡ έχει το ίδιο το αρχείο),
@@ -773,6 +777,7 @@ async function loadSource(manual){
     A.gr = null; A.grSrc = m.teachers.some(t => t.cells.includes('G')) ? 'από το αρχείο' : 'κανένα';
     if (manual && !saveBase(fname, toB64(buf), baseAt)) toast('Δεν υπάρχει χώρος στη συσκευή για να περάσει το πρόγραμμα στις Εφημερίες.');
     $('empty').hidden = true; $('main').hidden = false;
+    await loadParLocks(); A.cache = {};
     restoreDraft();
     fillSelect(); render();
     if (manual) publish(true);
@@ -784,7 +789,7 @@ async function loadSource(manual){
 const SIGV = 6;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort(), a.days.map(d => hoursOf(a, d))]).sort();
-  return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts]);
+  return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts, A.parLocks]);
 }
 function compactName(fname, days){ return String(fname || 'Πρόγραμμα.xlsx').replace(/\.xlsx$/i, '') + ` (συμπύκνωση ${days.map(d => DSHORT[d]).join('-')}).xlsx`; }
 function syInfo(days){
@@ -902,14 +907,31 @@ function activeDays(){ return [...new Set(A.absent.flatMap(a => a.days))].sort((
 /* Χειροκίνητες αλλαγές: ανά μέρα ολόκληρη η διάταξη (μάθημα «όνομα|αρχική ώρα» → ώρα) και ποια άλλαξες εσύ.
    Ισχύουν όσο μένουν ίδιοι οι απόντες της μέρας, το πρόγραμμα και οι κανόνες. */
 const ekey = e => `${A.model.teachers[e.ti].name}|${e.p0}`;
-function daySig(d){ return JSON.stringify([A.baseAt, absentNames(d).slice().sort(), A.opts]); }
+function daySig(d){ return JSON.stringify([A.baseAt, absentNames(d).slice().sort(), A.opts, A.parLocks.filter(k => k.day === d)]); }
 function absentSet(d){ return new Set(A.absent.filter(a => a.days.includes(d) && !hoursOf(a, d)).map(a => a.ti)); }
 // ώρες απουσίας μιας μέρας: null = όλη τη μέρα, αλλιώς πίνακας ωρών
 function hoursOf(a, d){ const h = a.hours && a.hours[d]; return Array.isArray(h) && h.length ? h.slice().sort((x, y) => x - y) : null; }
+// Ώρες γονέων που κλείδωσες με το χέρι στο ΓΡ (από την τελευταία κατανομή του, για αυτό το πρόγραμμα)
+async function loadParLocks(){
+  const before = JSON.stringify(A.parLocks); A.parLocks = [];
+  const pl = ls.get(K.plan);
+  if (pl && pl.file && Array.isArray(pl.parents) && Array.isArray(pl.parentLocked) && (pl.at || 0) > A.baseAt && window.ExcelJS) {
+    try {
+      const wb = new ExcelJS.Workbook(); await wb.xlsx.load(fromB64(pl.file)); const m2 = parseSheet(wb.worksheets[0]);
+      pl.parents.forEach((si, i) => { if (pl.parentLocked[i] && si >= 0 && m2.teachers[i] && m2.slots[si]) A.parLocks.push({ name: m2.teachers[i].name, day: m2.slots[si].day, period: m2.slots[si].period }); });
+    } catch(e) { /* χωρίς ώρες γονέων */ }
+  }
+  return JSON.stringify(A.parLocks) !== before;
+}
+function parentAt(d){
+  const out = {};
+  A.parLocks.filter(k => k.day === d).forEach(k => { const ti = A.model.teachers.findIndex(t => t.name === k.name); if (ti >= 0) out[ti] = k.period; });
+  return out;
+}
 function absCtx(d){
   const absentHours = {};
   A.absent.forEach(a => { const h = a.days.includes(d) && hoursOf(a, d); if (h) absentHours[a.ti] = new Set(h); });
-  return { absent: absentSet(d), absentHours };
+  return { absent: absentSet(d), absentHours, parentAt: parentAt(d) };
 }
 // απών ο ti τη μέρα d την ώρα p;
 function isAbsAt(d, ti, p){ const a = A.absent.find(x => x.ti === ti); if (!a || !a.days.includes(d)) return false; const h = hoursOf(a, d); return !h || h.includes(p); }
@@ -1025,7 +1047,10 @@ function renderDay(){
   if (A.view === 'cls') renderClassGrid(r); else renderTeacherGrid(r);
   renderEditBar(r);
   renderChanges(r);
-  $('unknown').innerHTML = r.unknown.length ? `<div class="warnbox">Δεν αναγνωρίστηκε τμήμα σε ${r.unknown.length} ${r.unknown.length === 1 ? 'κελί' : 'κελιά'} (${[...new Set(r.unknown.map(u => u.label))].slice(0, 8).map(esc).join(', ')}). Αυτά μένουν στη θέση τους και μετράνε ως απασχόληση του καθηγητή.</div>` : '';
+  const pl = A.parLocks.filter(k => k.day === d);
+  $('unknown').innerHTML = (pl.length ? `<p class="note">Ώρες γονέων από το ΓΡ (όρισες με το χέρι): ${pl.map(k => `<b>${esc(k.name)}</b> ${ord(k.period)}`).join(' · ')}. Ο καθηγητής μένει ελεύθερος εκείνη την ώρα.</p>` : '') +
+    (r.conflicts && r.conflicts.length ? `<div class="warnbox">Δεν βρέθηκε άλλη θέση για ${r.conflicts.map(e => `<b>${esc(m.teachers[e.ti].name)}</b> ${esc(e.label)} ${ord(e.p)}`).join(', ')} — πέφτει πάνω στην ώρα γονέων. Άλλαξε την ώρα γονέων στο ΓΡ ή μετακίνησε το μάθημα με το χέρι.</div>` : '') +
+    (r.unknown.length ? `<div class="warnbox">Δεν αναγνωρίστηκε τμήμα σε ${r.unknown.length} ${r.unknown.length === 1 ? 'κελί' : 'κελιά'} (${[...new Set(r.unknown.map(u => u.label))].slice(0, 8).map(esc).join(', ')}). Αυτά μένουν στη θέση τους και μετράνε ως απασχόληση του καθηγητή.</div>` : '');
 }
 function renderClassGrid(r){
   const m = A.model, P = r.P;
@@ -1361,7 +1386,10 @@ const drop = $('drop');
 ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => pickFile(e.dataTransfer.files[0]));
-window.addEventListener('storage', e => { if (e.key === K.tt) { const t = ls.get(K.tt); if (t && t.from === 'sy') renderFlow(); else loadSource(); } });
+// άλλαξε η κατανομή του ΓΡ (π.χ. νέα ώρα γονέων με το χέρι): ξαναϋπολογισμός της μέρας
+async function refreshParLocks(){ if (A.model && await loadParLocks()) { toast('Νέες ώρες γονέων από το ΓΡ — η συμπύκνωση ξαναϋπολογίστηκε'); A.cache = {}; change(); } }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshParLocks(); });
+window.addEventListener('storage', e => { if (e.key === K.plan) refreshParLocks(); if (e.key === K.tt) { const t = ls.get(K.tt); if (t && t.from === 'sy') renderFlow(); else loadSource(); } });
 
 loadSource();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
