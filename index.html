@@ -378,8 +378,8 @@
 
   // «Λήψη όλων»: φορτώνει αθόρυβα τις εφαρμογές και ζητάει από την καθεμία τα αρχεία της
   var btn = document.getElementById('dlAll'), msg = document.getElementById('dlMsg');
-  btn.disabled = !(efHas || grHas || anHas);
-  btn.title = 'Κατεβάζει μαζί το Word των εφημεριών, το Excel των ΓΡ' + (anHas ? ' και το Word των αναπληρώσεων' : '') + ' (σε ένα .zip)';
+  btn.disabled = !(efHas || grHas);
+  btn.title = 'Κατεβάζει μαζί το Word των εφημεριών και το Excel των ΓΡ (σε ένα .zip)';
   function frame(src) {
     return new Promise(function (ok, no) {
       var f = document.createElement('iframe');
@@ -414,7 +414,7 @@
     function run() {
     btn.disabled = true; btn.querySelector('span').textContent = 'Ετοιμασία…'; msg.hidden = true;
     var LBL = ['Εφημερίες', 'ΓΡ', 'Αναπληρώσεις'];
-    var jobs = [efHas ? frame('efimeries/') : null, grHas ? frame('gr/') : null, anHas ? frame('anaplirwseis/') : null];
+    var jobs = [efHas ? frame('efimeries/') : null, grHas ? frame('gr/') : null];   // μόνο Εφημερίες + ΓΡ· τις Αναπληρώσεις τις κατεβάζεις από την εφαρμογή τους
     Promise.all(jobs.map(function (j) { return j ? j.then(function (x) { return x; }, function (e) { return { err: e }; }) : null; })).then(function (res) {
       var files = [], errs = [];
       res.forEach(function (x, i) {
