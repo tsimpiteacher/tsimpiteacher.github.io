@@ -73,6 +73,14 @@ select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line)
 :root[data-theme="dark"] .dsel button[aria-pressed="true"]{color:#1a0d0c}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dsel button[aria-pressed="true"]{color:#1a0d0c}}
 .dsel button:disabled{opacity:.35;cursor:default}
+.hrs{flex:1 1 100%;display:flex;flex-direction:column;gap:5px;padding-top:2px}
+.hrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px}
+.hrow .hd{font-weight:700;min-width:30px;color:var(--muted)}
+.hsel{display:flex;gap:3px;flex-wrap:wrap}
+.hsel button{font:inherit;font-size:12px;font-weight:650;min-width:28px;height:28px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:7px;cursor:pointer;padding:0 6px}
+.hsel button.nol{opacity:.55;font-weight:500}
+.hsel button[aria-pressed="true"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);opacity:1}
+.hrow .hl{color:var(--muted)}
 .rm{border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
 .rm:hover{color:var(--bad)}
 /* κανόνες */
@@ -370,7 +378,7 @@ tr.chg td.nm{color:var(--mv)}
         <button class="btn ghost no-print" id="clearAbs" type="button" hidden>Καθαρισμός</button>
       </div>
       <ul class="abs" id="absList"></ul>
-      <p class="sub" id="absNote" style="margin:10px 0 0">Πρόσθεσε όσους λείπουν και πάτα τις μέρες της απουσίας τους. Ο αριθμός κάτω από κάθε μέρα είναι οι ώρες μαθήματος εκείνη τη μέρα.</p>
+      <p class="sub" id="absNote" style="margin:10px 0 0">Πρόσθεσε όσους λείπουν και πάτα τις μέρες της απουσίας τους (ο αριθμός = ώρες μαθήματος εκείνη τη μέρα). Για κάθε μέρα φαίνονται οι ώρες: πατημένες = λείπει· ξεπάτα όσες είναι παρών.</p>
 
       <div class="flow no-print" id="flow">
         <ol class="fsteps" aria-label="Σειρά εργασιών">
@@ -526,7 +534,8 @@ function rand(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>
 
 /*
  * Συμπύκνωση μιας ημέρας.
- *   ctx.absent  : Set με δείκτες απόντων εκπαιδευτικών
+ *   ctx.absent  : Set με δείκτες απόντων εκπαιδευτικών (όλη τη μέρα)
+ *   ctx.absentHours : { δείκτης: Set ωρών } — απόντες μόνο κάποιες ώρες
  *   ctx.gr      : πίνακας (ανά εκπαιδευτικό) με Set θέσεων ΓΡ — αν λείπει, από το αρχείο
  *   ctx.opts    : { useGR, notEarlier, keepDouble }
  *   ctx.pins    : Set με id μαθημάτων που ο αλγόριθμος δεν μετακινεί
@@ -551,12 +560,13 @@ function compactDay(model, d, ctx) {
     S.forEach(s => {
       const si = s.si, p = s.period, c = t.cells[si];
       const isGr = ctx.gr && ctx.gr[ti] ? ctx.gr[ti].has(si) : c === 'G';
-      if (t.grey[si]) row[p] = 2;
+      const off = !!(ctx.absentHours && ctx.absentHours[ti] && ctx.absentHours[ti].has(p));
+      if (t.grey[si] || off) row[p] = 2;   // απών εκείνη την ώρα: τίποτα δεν μπαίνει εκεί
       if (c === 'L') {
         const label = t.labels[si], cls = classesOf(label);
         if (!cls.length) { row[p] = 2; unknown.push({ ti, p, label }); return; }
         const e = { id: `${ti}:${si}`, ti, si, p0: p, p, label, cls, span: t.span[si] || '' };
-        (absent.has(ti) ? removed : lessons).push(e);
+        (absent.has(ti) || off ? removed : lessons).push(e);
       } else if (c === 'P') row[p] = 2;
       else if (isGr && row[p] === 0) row[p] = 1;
     });
@@ -773,7 +783,7 @@ async function loadSource(manual){
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
 const SIGV = 5;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
-  const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort()]).sort();
+  const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort(), a.days.map(d => hoursOf(a, d))]).sort();
   return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts]);
 }
 function compactName(fname, days){ return String(fname || 'Πρόγραμμα.xlsx').replace(/\.xlsx$/i, '') + ` (συμπύκνωση ${days.map(d => DSHORT[d]).join('-')}).xlsx`; }
@@ -806,14 +816,13 @@ async function buildWeekXlsx(baseFile, days){
       ws.unMergeCells(rg);
     });
     const inKept = (rr, cc) => kept.some(k => rr >= k.r1 && rr <= k.r2 && cc >= k.c1 && cc <= k.c2);
-    const absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti));
     const byT = {}; r.entries.forEach(e => { (byT[e.ti] = byT[e.ti] || {})[e.p] = e; });
     m.teachers.forEach((t, ti) => {
       if (t.staff) return;
       S.forEach(s => {
         if (inKept(t.row, s.col)) return;
         const cell = ws.getCell(t.row, s.col), c = t.cells[s.si];
-        if (absent.has(ti)) { cell.value = null; paint(cell, 'BFBFBF'); return; }   // απών: γκρι όλη η μέρα
+        if (isAbsAt(d, ti, s.period)) { cell.value = null; paint(cell, 'BFBFBF'); return; }   // απών εκείνη την ώρα (ή όλη τη μέρα): γκρι
         const e = byT[ti] && byT[ti][s.period];
         if (e) {
           cell.value = e.label;
@@ -867,13 +876,13 @@ function renderFlow(pending){
 /* ---------- πρόχειρο ---------- */
 function saveDraft(){
   if (!A.model) return;
-  ls.set(K.draft, { at: Date.now(), absent: A.absent.map(a => ({ name: A.model.teachers[a.ti].name, days: a.days })), edits: A.edits, opts: A.opts, day: A.day, view: A.view });
+  ls.set(K.draft, { at: Date.now(), absent: A.absent.map(a => ({ name: A.model.teachers[a.ti].name, days: a.days, hours: a.hours || {} })), edits: A.edits, opts: A.opts, day: A.day, view: A.view });
 }
 function restoreDraft(){
   const dr = ls.get(K.draft); const m = A.model;
   A.absent = [];
   if (dr) {
-    (dr.absent || []).forEach(a => { const ti = m.teachers.findIndex(t => key(t.name) === key(a.name)); if (ti >= 0 && !A.absent.some(x => x.ti === ti)) A.absent.push({ ti, days: (a.days || []).filter(d => d >= 0 && d < 5) }); });
+    (dr.absent || []).forEach(a => { const ti = m.teachers.findIndex(t => key(t.name) === key(a.name)); if (ti >= 0 && !A.absent.some(x => x.ti === ti)) A.absent.push({ ti, days: (a.days || []).filter(d => d >= 0 && d < 5), hours: a.hours && typeof a.hours === 'object' ? a.hours : {} }); });
     A.edits = dr.edits && typeof dr.edits === 'object' ? dr.edits : {}; A.cache = {}; A.sel = null;
     if (dr.opts) Object.assign(A.opts, dr.opts);
     if (typeof dr.day === 'number') A.day = dr.day;
@@ -889,7 +898,22 @@ function activeDays(){ return [...new Set(A.absent.flatMap(a => a.days))].sort((
    Ισχύουν όσο μένουν ίδιοι οι απόντες της μέρας, το πρόγραμμα και οι κανόνες. */
 const ekey = e => `${A.model.teachers[e.ti].name}|${e.p0}`;
 function daySig(d){ return JSON.stringify([A.baseAt, absentNames(d).slice().sort(), A.opts]); }
-function absentSet(d){ return new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti)); }
+function absentSet(d){ return new Set(A.absent.filter(a => a.days.includes(d) && !hoursOf(a, d)).map(a => a.ti)); }
+// ώρες απουσίας μιας μέρας: null = όλη τη μέρα, αλλιώς πίνακας ωρών
+function hoursOf(a, d){ const h = a.hours && a.hours[d]; return Array.isArray(h) && h.length ? h.slice().sort((x, y) => x - y) : null; }
+function absCtx(d){
+  const absentHours = {};
+  A.absent.forEach(a => { const h = a.days.includes(d) && hoursOf(a, d); if (h) absentHours[a.ti] = new Set(h); });
+  return { absent: absentSet(d), absentHours };
+}
+// απών ο ti τη μέρα d την ώρα p;
+function isAbsAt(d, ti, p){ const a = A.absent.find(x => x.ti === ti); if (!a || !a.days.includes(d)) return false; const h = hoursOf(a, d); return !h || h.includes(p); }
+const periodsOf = d => { const ps = A.model.slots.filter(s => s.day === d).map(s => s.period); return ps.length ? Math.max(...ps) : 0; };
+function hrsLabel(h){   // [1,2,3] → «1η–3η», [1,3] → «1η, 3η»
+  const out = []; let i = 0;
+  while (i < h.length) { let j = i; while (j + 1 < h.length && h[j + 1] === h[j] + 1) j++; out.push(j > i + 1 ? `${ord(h[i])}–${ord(h[j])}` : j === i + 1 ? `${ord(h[i])}, ${ord(h[j])}` : ord(h[i])); i = j + 1; }
+  return out.join(', ');
+}
 function idsOf(d, keys){   // «όνομα|ώρα» → id μαθήματος της ημέρας
   const m = A.model, out = {};
   Object.keys(keys).forEach(k => { const i = k.lastIndexOf('|'), name = k.slice(0, i), p0 = +k.slice(i + 1);
@@ -905,8 +929,8 @@ function compute(){
     if (ed && ed.sig !== sig) { delete A.edits[d]; ed = null; lost.push(d); }
     const ck = JSON.stringify([sig, ed ? ed.pos : null]);
     if (A.cache[d] && A.cache[d].k === ck) { res[d] = A.cache[d].r; return; }
-    let r = compactDay(m, d, { absent: absentSet(d), gr: A.gr, opts: A.opts, layout: ed ? idsOf(d, ed.pos) : null });
-    if (r && r.layoutBad) { delete A.edits[d]; lost.push(d); r = compactDay(m, d, { absent: absentSet(d), gr: A.gr, opts: A.opts }); }
+    let r = compactDay(m, d, { ...absCtx(d), gr: A.gr, opts: A.opts, layout: ed ? idsOf(d, ed.pos) : null });
+    if (r && r.layoutBad) { delete A.edits[d]; lost.push(d); r = compactDay(m, d, { ...absCtx(d), gr: A.gr, opts: A.opts }); }
     A.cache[d] = { k: JSON.stringify([sig, A.edits[d] ? A.edits[d].pos : null]), r }; res[d] = r;
   });
   A.res = res;
@@ -950,7 +974,13 @@ function renderAbsent(){
   $('absList').innerHTML = A.absent.map(a => {
     const t = m.teachers[a.ti];
     const days = DAYS.map((_, d) => { const n = lessonsOn(a.ti, d); return `<button type="button" data-ti="${a.ti}" data-d="${d}" aria-pressed="${a.days.includes(d)}"${n || a.days.includes(d) ? '' : ' disabled'} title="${DAYS[d]}: ${n} ${n === 1 ? 'ώρα' : 'ώρες'}">${DSHORT[d]}<small>${n}</small></button>`; }).join('');
-    return `<li><span class="nm">${esc(t.name)}${t.spec ? `<small>${esc(t.spec)}</small>` : ''}</span><span class="dsel" role="group" aria-label="Μέρες απουσίας">${days}</span><button type="button" class="rm" data-rm="${a.ti}" aria-label="Αφαίρεση ${esc(t.name)}">×</button></li>`;
+    const hrs = a.days.slice().sort((x, y) => x - y).map(d => {
+      const P = periodsOf(d), h = hoursOf(a, d), si = p => m.slots.findIndex(s => s.day === d && s.period === p);
+      const chips = Array.from({ length: P }, (_, i) => i + 1).map(p => { const L = si(p) >= 0 && t.cells[si(p)] === 'L';
+        return `<button type="button" data-hti="${a.ti}" data-hd="${d}" data-h="${p}" aria-pressed="${!h || h.includes(p)}" class="${L ? '' : 'nol'}" title="${ord(p)} ώρα${L ? ' · έχει μάθημα' : ''}">${p}</button>`; }).join('');
+      return `<div class="hrow"><span class="hd">${DSHORT[d]}</span><span class="hsel" role="group" aria-label="Ώρες απουσίας ${DAYS[d]}">${chips}</span><span class="hl">${h ? 'λείπει ' + hrsLabel(h) : 'όλη τη μέρα'}</span></div>`;
+    }).join('');
+    return `<li><span class="nm">${esc(t.name)}${t.spec ? `<small>${esc(t.spec)}</small>` : ''}</span><span class="dsel" role="group" aria-label="Μέρες απουσίας">${days}</span><button type="button" class="rm" data-rm="${a.ti}" aria-label="Αφαίρεση ${esc(t.name)}">×</button>${hrs ? `<div class="hrs">${hrs}</div>` : ''}</li>`;
   }).join('');
   $('clearAbs').hidden = !A.absent.length;
   const n = Object.values(A.opts).filter(Boolean).length;
@@ -974,7 +1004,7 @@ function render(){
 }
 // αλλαγή από τον χρήστη: ξαναϋπολογισμός και (λίγο μετά) ενημέρωση του προγράμματος για τις Εφημερίες
 function change(){ render(); schedulePublish(); }
-function absentNames(d){ return A.absent.filter(a => a.days.includes(d)).map(a => A.model.teachers[a.ti].name); }
+function absentNames(d){ return A.absent.filter(a => a.days.includes(d)).map(a => { const h = hoursOf(a, d); return A.model.teachers[a.ti].name + (h ? ` (${hrsLabel(h)})` : ''); }); }
 function renderDay(){
   const m = A.model, d = A.day, r = A.res[d];
   document.querySelectorAll('.seg [data-v]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === A.view)));
@@ -1034,7 +1064,7 @@ function renderTeacherGrid(r){
     const isAbs = absent.has(ti);
     h += `<tr class="${isAbs ? 'absrow' : vacated[ti] ? 'chg' : ''}"><td class="nm" title="${esc(t.name)}">${esc(t.name)}</td>`;
     for (let p = 1; p <= P; p++) {
-      if (isAbs) { const e = rm[ti] && rm[ti][p]; h += `<td class="c A">${e ? `<s>${esc(e.label)}</s>` : ''}</td>`; continue; }
+      if (isAbs && isAbsAt(d, ti, p)) { const e = rm[ti] && rm[ti][p]; h += `<td class="c A">${e ? `<s>${esc(e.label)}</s>` : ''}</td>`; continue; }
       const e = byT[ti] && byT[ti][p], mk = mark(ti, p, e), at = `data-t="${ti}" data-p="${p}"`;
       if (e) {
         const mv = e.p !== e.p0, pin = isFixed(d, e);
@@ -1128,7 +1158,7 @@ async function buildXlsx(){
   const all = [];
   activeDays().forEach(d => {
     const r = A.res[d]; if (!r) return;
-    const P = r.P, absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti));
+    const P = r.P, absent = new Set(A.absent.filter(a => a.days.includes(d)).map(a => a.ti)), absA = A.absent.reduce((o, a) => (o[a.ti] = a, o), {});
     // Φύλλο 1: ίδια διάταξη με το ωρολόγιο (ανοίγει και στις άλλες εφαρμογές)
     const ws = wb.addWorksheet(DAYS[d], { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .4, right: .4, top: .5, bottom: .5, header: .2, footer: .2 } }, views: [{ state: 'frozen', xSplit: 2, ySplit: 5 }] });
     ws.getCell(1, 1).value = school || 'Ωρολόγιο πρόγραμμα';
@@ -1149,7 +1179,7 @@ async function buildXlsx(){
       const notes = [];
       for (let p = 1; p <= P; p++) {
         const x = ws.getCell(row, 2 + p); x.border = BORDER; x.alignment = { horizontal: 'center', vertical: 'middle' };
-        if (absent.has(ti)) { x.fill = FILL('BFBFBF'); continue; }
+        if (isAbsAt(d, ti, p)) { x.fill = FILL('BFBFBF'); continue; }
         const e = byT[ti] && byT[ti][p];
         if (e) {
           x.value = e.label;
@@ -1164,7 +1194,7 @@ async function buildXlsx(){
           else if (r.entries.some(q => q.ti === ti && q.p0 === p && q.p !== q.p0)) { x.fill = FILL('FFFF00'); x.note = 'Κενό από τη συμπύκνωση'; }
         }
       }
-      if (absent.has(ti)) notes.push('ΑΠΩΝ');
+      if (absent.has(ti)) { const h = hoursOf(absA[ti], d); notes.push(h ? `ΑΠΩΝ ${hrsLabel(h)}` : 'ΑΠΩΝ'); }
       const nc = ws.getCell(row, 3 + P); nc.value = notes.join(' · '); nc.border = BORDER; if (notes.length) nc.font = { bold: true, color: { argb: absent.has(ti) ? 'FFB3261E' : 'FF004D40' } };
       ws.getCell(row, 1).border = BORDER; ws.getCell(row, 2).border = BORDER;
       if (notes.length) ws.getCell(row, 1).font = { bold: true };
@@ -1242,9 +1272,21 @@ $('addAbs').addEventListener('change', e => {
 $('absList').addEventListener('click', e => {
   const rm = e.target.closest('[data-rm]');
   if (rm) { const ti = +rm.dataset.rm; A.absent = A.absent.filter(a => a.ti !== ti); fillSelect(); change(); return; }
+  const hb = e.target.closest('button[data-h]');
+  if (hb) {   // ώρα απουσίας: πατημένη = λείπει
+    const a = A.absent.find(x => x.ti === +hb.dataset.hti), d = +hb.dataset.hd, p = +hb.dataset.h; if (!a) return;
+    const P = periodsOf(d), all = Array.from({ length: P }, (_, i) => i + 1);
+    let h = hoursOf(a, d) || all;
+    h = h.includes(p) ? h.filter(x => x !== p) : h.concat(p).sort((x, y) => x - y);
+    if (!h.length) { toast('Πρέπει να λείπει τουλάχιστον μία ώρα — αλλιώς ξεπάτα τη μέρα.'); return; }
+    a.hours = a.hours || {};
+    if (h.length === P) delete a.hours[d]; else a.hours[d] = h;
+    A.day = d; change(); return;
+  }
   const b = e.target.closest('button[data-d]'); if (!b) return;
   const a = A.absent.find(x => x.ti === +b.dataset.ti), d = +b.dataset.d; if (!a) return;
   a.days = a.days.includes(d) ? a.days.filter(x => x !== d) : a.days.concat(d).sort();
+  if (!a.days.includes(d) && a.hours) delete a.hours[d];
   if (a.days.includes(d)) A.day = d;
   change();
 });
@@ -1276,7 +1318,7 @@ $('editBar').addEventListener('click', ev => {
   if (what === 'fill') {
     const ed = A.edits[d], fixed = new Set(Object.keys(idsOf(d, Object.fromEntries(ed.fixed.map(k => [k, 1]))))); 
     const before = r.holes.length;
-    const nr = compactDay(A.model, d, { absent: absentSet(d), gr: A.gr, opts: A.opts, layout: idsOf(d, ed.pos), improve: true, pins: fixed });
+    const nr = compactDay(A.model, d, { ...absCtx(d), gr: A.gr, opts: A.opts, layout: idsOf(d, ed.pos), improve: true, pins: fixed });
     if (!nr || nr.layoutBad) { toast('Δεν έγινε.'); return; }
     nr.entries.forEach(y => { ed.pos[ekey(y)] = y.p; });
     toast(nr.holes.length < before ? `Έκλεισαν ${before - nr.holes.length} από τα ${before} κενά` : 'Δεν βρέθηκε τρόπος να κλείσουν άλλα κενά χωρίς να αλλάξουν όσα όρισες');
