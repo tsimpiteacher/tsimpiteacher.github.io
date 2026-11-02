@@ -355,6 +355,8 @@ function txt(v) {
 const norm = s => s.replace(/\s+/g, ' ').trim();
 
 // A grey fill marks a teacher as unavailable (e.g. at another school) that day.
+// Σημάδι της Συμπύκνωσης για «απών μόνο αυτή την ώρα» (μερική απουσία): δεν αποκλείει όλη τη μέρα όπως το γκρι.
+function isOff(fill) { return !!(fill && fill.fgColor && String(fill.fgColor.argb || '').toUpperCase() === 'FFFFD7D7'); }
 function isGrey(fill) {
   if (!fill || fill.type !== 'pattern' || !fill.pattern || fill.pattern === 'none') return false;
   const c = fill.fgColor || {};
@@ -410,13 +412,13 @@ function parseSheet(ws) {
       const m = mergeAt(r, s.col);
       const v = m ? txt(ws.getCell(m.r1, m.c1).value) : txt(ws.getCell(r, s.col).value);
       const cell = m ? ws.getCell(m.r1, m.c1) : ws.getCell(r, s.col);
-      return { v, merged: !!m, wide: m ? (m.c2 - m.c1 + 1) : 1, grey: isGrey(cell.fill) };
+      return { v, merged: !!m, wide: m ? (m.c2 - m.c1 + 1) : 1, grey: isGrey(cell.fill), off: isOff(cell.fill) };
     });
     const blockedDays = [...new Set(cells.map((c, i) => c.grey ? slots[i].day : null).filter(d => d != null))];
     const staff = cells.some(c => c.wide >= 8); // e.g. ΝΟΣΗΛΕΥΤΗΣ across the week
     teachers.push({
       row: r, name, spec, staff, blockedDays,
-      grey: cells.map(c => c.grey),
+      grey: cells.map(c => c.grey), off: cells.map(c => c.off),
       cells: cells.map(c => c.v === GR && !c.merged ? 'G' : (c.v === PAR && !c.merged) ? 'F' : (c.v ? 'L' : 'F')),
       labels: cells.map(c => (c.v === GR || c.v === PAR ? '' : c.v)),
       fileParent: cells.findIndex(c => c.v === PAR && !c.merged),
@@ -511,7 +513,7 @@ function teacherInfo(ti, d){
 // tier: 0 = ΓΡ εκείνη την ώρα, 1 = κενό ανάμεσα σε μαθήματα, 2 = πριν/μετά τα μαθήματα της μέρας, null = δεν μπορεί
 function tierOf(ui, si, d, absentSet){
   const m = A.model, t = m.teachers[ui];
-  if (t.staff || absentSet.has(ui) || t.blockedDays.includes(d) || (t.grey && t.grey[si])) return null;
+  if (t.staff || absentSet.has(ui) || t.blockedDays.includes(d) || (t.grey && t.grey[si]) || (t.off && t.off[si])) return null;
   if (t.cells[si] === 'L' || A.par[ui] === si) return null;
   const inf = teacherInfo(ui, d);
   if (!inf.any) return null;                       // δεν είναι στο σχολείο εκείνη τη μέρα

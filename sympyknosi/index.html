@@ -781,7 +781,7 @@ async function loadSource(manual){
 }
 
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
-const SIGV = 5;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
+const SIGV = 6;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort(), a.days.map(d => hoursOf(a, d))]).sort();
   return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts]);
@@ -795,6 +795,8 @@ function syInfo(days){
 // ώστε οι Εφημερίες να μην τους βάλουν σε βάρδια και το ΓΡ να τους θεωρεί εκτός.
 // Το ExcelJS μοιράζει το ίδιο αντικείμενο μορφοποίησης σε όλα τα κελιά με ίδιο στυλ: αλλάζοντας cell.fill άλλαζαν
 // και όλα τα «αδέρφια» του (π.χ. όλη η 1η ώρα γινόταν πράσινη). Κάθε κελί παίρνει δικό του αντίγραφο.
+// Σημάδι μερικής απουσίας για ΓΡ/Αναπληρώσεις (ίδια τιμή εκεί). Όχι γκρι, ώστε να μη σημαίνει «εκτός όλη τη μέρα».
+const OFF_FILL = 'FFD7D7';
 function paint(cell, argb){ cell.style = Object.assign({}, cell.style, { fill: FILL(argb) }); }
 async function buildWeekXlsx(baseFile, days){
   const m = A.model, wb = new ExcelJS.Workbook(); await wb.xlsx.load(fromB64(baseFile));
@@ -822,7 +824,10 @@ async function buildWeekXlsx(baseFile, days){
       S.forEach(s => {
         if (inKept(t.row, s.col)) return;
         const cell = ws.getCell(t.row, s.col), c = t.cells[s.si];
-        if (isAbsAt(d, ti, s.period)) { cell.value = null; paint(cell, 'BFBFBF'); return; }   // απών εκείνη την ώρα (ή όλη τη μέρα): γκρι
+        if (isAbsAt(d, ti, s.period)) {   // απών: όλη τη μέρα → γκρι (= «εκτός όλη τη μέρα» για το ΓΡ)· μόνο κάποιες ώρες → OFF_FILL (= «όχι αυτή την ώρα»)
+          const a = A.absent.find(x => x.ti === ti);
+          cell.value = null; paint(cell, hoursOf(a, d) ? OFF_FILL : 'BFBFBF'); return;
+        }
         const e = byT[ti] && byT[ti][s.period];
         if (e) {
           cell.value = e.label;
