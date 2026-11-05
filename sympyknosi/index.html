@@ -180,7 +180,7 @@ tr.chg td.nm{color:var(--mv)}
 </style>
 </head>
 <body>
-<!-- ===== Μπάρα σουίτας: αρχική + εναλλαγή Συμπύκνωση ⇄ Εφημερίες ⇄ ΓΡ ⇄ Αναπληρώσεις (ίδιο κομμάτι σε όλες τις εφαρμογές) ===== -->
+<!-- ===== Μπάρα σουίτας: αρχική + εναλλαγή Συμπύκνωση ⇄ Εφημερίες ⇄ ΓΡ (ίδιο κομμάτι σε όλες τις εφαρμογές) ===== -->
 <nav class="sbar" id="suiteBar" data-app="sy" aria-label="Εφαρμογές">
   <a class="sbar-home" href="../" title="Όλες οι εφαρμογές">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>
@@ -205,10 +205,6 @@ tr.chg td.nm{color:var(--mv)}
 <a class="sbar-opt gr" href="../gr/" data-to="gr">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="18" height="17" rx="2.5"/><path d="M3 9h18M9 9v11.5M15 9v11.5"/></svg>
       <b class="sn">3</b><span>ΓΡ</span>
-    </a>
-<a class="sbar-opt an" href="../anaplirwseis/" data-to="an">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5h5M18.5 5v5"/></svg>
-      <b class="sn">4</b><span class="l">Αναπληρώσεις</span><span class="s">Αναπλ.</span>
     </a>
   </div>
   <a class="sbar-next" id="sbarNext" href="../" hidden><span class="nl"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -292,7 +288,7 @@ tr.chg td.nm{color:var(--mv)}
   try { localStorage.setItem('suite-last-app', app); } catch (e) { /* αγνόησε */ }
   // ---- Επόμενο βήμα της εβδομάδας: Συμπύκνωση → Εφημερίες → ΓΡ → Αναπληρώσεις → (αρχική: λήψη όλων) ----
   // Μια εφαρμογή μπορεί να ορίσει window.suiteNext(href) για να ετοιμάσει πρώτα κάτι (π.χ. η Συμπύκνωση το πρόγραμμα).
-  var NEXT = { sy: ['../efimeries/?from=sy', 'Επόμενο: Εφημερίες'], ef: ['../gr/?from=ef', 'Επόμενο: ΓΡ'], gr: ['../anaplirwseis/?from=gr', 'Επόμενο: Αναπληρώσεις'], an: ['../#week', 'Τέλος: Λήψη όλων'] };
+  var NEXT = { sy: ['../efimeries/?from=sy', 'Επόμενο: Εφημερίες'], ef: ['../gr/?from=ef', 'Επόμενο: ΓΡ'], gr: ['../#week', 'Τέλος: Λήψη όλων'] };
   var nx = document.getElementById('sbarNext');
   if (nx && NEXT[app]) {
     nx.href = NEXT[app][0]; nx.querySelector('.nl').textContent = NEXT[app][1]; nx.title = NEXT[app][1]; nx.hidden = false;
@@ -419,7 +415,7 @@ tr.chg td.nm{color:var(--mv)}
 
       <div class="flow no-print" id="flow">
         <ol class="fsteps" aria-label="Σειρά εργασιών">
-          <li class="on"><b>1</b>Συμπύκνωση</li><li><b>2</b>Εφημερίες</li><li><b>3</b>ΓΡ</li><li><b>4</b>Αναπληρώσεις</li>
+          <li class="on"><b>1</b>Συμπύκνωση</li><li><b>2</b>Εφημερίες</li><li><b>3</b>ΓΡ</li>
         </ol>
         <p class="ftxt" id="flowTxt"></p>
         <div class="fbtns">
@@ -925,7 +921,7 @@ function renderFlow(pending){
   $('nextBtn').textContent = days.length ? 'Συνέχεια στις Εφημερίες →' : 'Χωρίς συμπύκνωση → Εφημερίες';
   $('flowTxt').innerHTML = days.length
     ? `Οι Εφημερίες και το ΓΡ θα πάρουν το πρόγραμμα με συμπυκνωμένη ${days.length === 1 ? 'τη' : 'τις'} <b>${days.map(d => DAYS[d]).join(', ')}</b>· οι απόντες δεν μπαίνουν σε εφημερία εκείνες τις μέρες.` +
-      (holes ? ` <span style="color:var(--bad)">Μένουν ${holes} ${holes === 1 ? 'κενό' : 'κενά'} — θα εμφανιστούν μόνα τους στις Αναπληρώσεις (βήμα 4).</span>` : '') + (sent ? ' <span style="color:var(--ok)">✓ Έτοιμο</span>' : '')
+      (holes ? ` <span style="color:var(--bad)">Μένουν ${holes} ${holes === 1 ? 'κενό' : 'κενά'} — χρειάζονται αναπλήρωση.</span>` : '') + (sent ? ' <span style="color:var(--ok)">✓ Έτοιμο</span>' : '')
     : 'Δεν λείπει κανείς; Οι Εφημερίες θα πάρουν το κανονικό πρόγραμμα της εβδομάδας.';
 }
 
@@ -1186,7 +1182,7 @@ function renderChanges(r){
     : '<p class="sub">Καμία· τα κενά βρίσκονται στο τέλος της μέρας ή δεν μπορούν να καλυφθούν.</p>';
   if (c.earlier.length) h += '<h3>Σχολάνε νωρίτερα</h3><ul><li>' + c.earlier.map(x => `<b>${esc(x.c)}</b> μετά την ${ord(x.to)} <span style="color:var(--muted)">(αντί ${ord(x.from)})</span>`).join(' · ') + '</li></ul>';
   if (c.holes.length) h += '<h3>Κενά που μένουν</h3><ul><li>' + c.holes.map(x => `<b>${esc(x.c)}</b> ${ord(x.p)}`).join(' · ') +
-    '<br><span style="color:var(--muted);font-size:13px">Κανένα μάθημα δεν μπορούσε να ανέβει εκεί. Χρειάζονται αναπλήρωση — <a href="../anaplirwseis/">Αναπληρώσεις</a>.</span></li></ul>';
+    '<br><span style="color:var(--muted);font-size:13px">Κανένα μάθημα δεν μπορούσε να ανέβει εκεί. Χρειάζονται αναπλήρωση.</span></li></ul>';
   const lt = Object.keys(c.lost).map(Number);
   const ltA = lt.filter(ti => c.lost[ti].some(e => e.follow == null)), ltF = lt.filter(ti => c.lost[ti].some(e => e.follow != null));
   if (ltA.length) h += '<h3>Ώρες απόντων</h3><ul>' + ltA.map(ti => `<li><b>${esc(m.teachers[ti].name)}</b><br><span style="color:var(--muted)">${c.lost[ti].filter(e => e.follow == null).sort((a, b) => a.p0 - b.p0).map(e => `${ord(e.p0)} ${esc(e.label)}`).join(' · ')}</span></li>`).join('') + '</ul>';
