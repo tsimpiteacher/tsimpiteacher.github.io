@@ -437,6 +437,21 @@
     return window.showSaveFilePicker({ suggestedName: zipName(), id: 'suite-save', types: [{ description: 'Αρχείο ZIP', accept: { 'application/zip': ['.zip'] } }] })
       .catch(function (e) { if (e && e.name === 'AbortError') throw e; return null; });
   }
+  // μετά τη «Λήψη όλων» τα βήματα που κατέβηκαν γίνονται ✓ αμέσως (χωρίς ανανέωση της σελίδας)
+  function markDone(idx) {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }, now = 'σήμερα ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    var lis = document.querySelectorAll('#steps li');
+    idx.forEach(function (k) {
+      var li = lis[k]; if (!li) return;
+      var dot = li.querySelector('.dot'), tx = li.querySelector('.t');
+      if (!dot || dot.classList.contains('bad')) return;
+      dot.className = 'dot ok'; dot.textContent = '✓';
+      if (tx) tx.innerHTML = tx.innerHTML.replace(/(Word|Excel): .*$/, '$1: ' + now).replace(/Το (Word|Excel) δεν έχει κατέβει/, '$1: ' + now);
+    });
+    var dots = [].map.call(lis, function (li) { return li.querySelector('.dot'); });
+    var ws = document.getElementById('weekSub');
+    if (ws && dots[1] && dots[2] && dots[1].classList.contains('ok') && dots[2].classList.contains('ok')) ws.innerHTML = ws.innerHTML.replace('Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή. ', 'Όλα έτοιμα για αυτή την εβδομάδα. ');
+  }
   btn.addEventListener('click', function () {
     var handle = null;
     pickZip().then(function (h) { handle = h; run(); }, function () { msg.textContent = 'Η αποθήκευση ακυρώθηκε.'; msg.hidden = false; });
@@ -445,13 +460,13 @@
     var LBL = ['Εφημερίες', 'ΓΡ', 'Αναπληρώσεις'];
     var jobs = [efHas ? frame('efimeries/') : null, grHas ? frame('gr/') : null];   // μόνο Εφημερίες + ΓΡ· τις Αναπληρώσεις τις κατεβάζεις από την εφαρμογή τους
     Promise.all(jobs.map(function (j) { return j ? j.then(function (x) { return x; }, function (e) { return { err: e }; }) : null; })).then(function (res) {
-      var files = [], errs = [];
+      var files = [], errs = [], done = [];
       res.forEach(function (x, i) {
         if (!x) return;
         if (x.f) x.f.remove();
         var r = x.r && !Array.isArray(x.r) ? [x.r] : (x.r || []);
         if (x.err || !r.length) errs.push(LBL[i] + (x.err ? ': ' + (x.err.message || x.err) : ': δεν υπάρχει κάτι έτοιμο'));
-        else r.forEach(function (f) { files.push(f); });
+        else { r.forEach(function (f) { files.push(f); }); done.push(i + 1); }
       });
       if (!files.length) throw new Error(errs.join(' · '));
       return makeZip(files).then(function (zip) {
@@ -462,6 +477,7 @@
         return write.then(function (t) {
           msg.innerHTML = t + 'Ξεχωριστά: ' + links.join(' · ') + (errs.length ? '<br>⚠ ' + esc(errs.join(' · ')) : '');
           msg.hidden = false;
+          markDone(done);
         });
       });
     }).catch(function (e) { dropEmpty(handle); msg.textContent = '⚠ Δεν φτιάχτηκε το .zip: ' + (e.message || e); msg.hidden = false; })
