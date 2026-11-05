@@ -5,7 +5,7 @@
 <script src="/suite-sync.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Εφαρμογές Γιάννη Τσιμπινού</title>
-<meta name="description" content="Σουίτα εργαλείων για το σχολείο: Συμπύκνωση, Εφημερίες, Κατανομή ΓΡ και Αναπληρώσεις. Δημιουργός: Γιάννης Τσιμπινός.">
+<meta name="description" content="Σουίτα εργαλείων για το σχολείο: Συμπύκνωση, Εφημερίες και Κατανομή ΓΡ. Δημιουργός: Γιάννης Τσιμπινός.">
 <meta name="theme-color" content="#0B3FA8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -101,6 +101,13 @@
   footer .role{margin:2px 0 8px;}
   footer a{color:var(--blue); font-weight:600; text-decoration:none; word-break:break-all;}
   footer a:hover{text-decoration:underline;}
+  .backup{margin:26px auto 0; max-width:620px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px 18px; display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; justify-content:space-between;}
+  .backup b{display:block; font-size:15px;} .backup span{font-size:13px; color:var(--muted);}
+  .backup .bk-btns{display:flex; flex-wrap:wrap; gap:8px;}
+  .backup button,.backup label{font:inherit; font-weight:700; font-size:13.5px; border-radius:10px; padding:9px 14px; cursor:pointer; border:1px solid var(--line); background:transparent; color:var(--ink); position:relative; overflow:hidden; display:inline-flex; align-items:center; gap:6px;}
+  .backup button.main{background:var(--blue-deep); color:#fff; border-color:transparent;}
+  .backup label input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+  .backup .bk-msg{flex-basis:100%; font-size:13px; font-weight:600;}
   .privacy{margin:26px auto 0; max-width:560px; text-align:center; font-size:13px; color:var(--muted);}
   .status{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink); background:var(--soft); border-radius:10px; padding:8px 10px;}
   .status[hidden]{display:none;}
@@ -129,7 +136,7 @@
   <header class="hero" style="padding-top:12px">
     <img class="logo" alt="Λογότυπο — Γιάννης Τσιμπινός" width="112" height="112" src="logo.webp">
     <h1>Εργαλεία για το σχολείο</h1>
-    <p class="lead">Μικρές εφαρμογές που τρέχουν απευθείας στον browser σου. Κάθε εβδομάδα: Συμπύκνωση → Εφημερίες → ΓΡ → Αναπληρώσεις.</p>
+    <p class="lead">Μικρές εφαρμογές που τρέχουν απευθείας στον browser σου. Κάθε εβδομάδα: Συμπύκνωση → Εφημερίες → ΓΡ.</p>
   </header>
 
   <main>
@@ -178,21 +185,21 @@
         <div class="sync" hidden></div>
         <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
-      <a class="card an" href="anaplirwseis/" data-app="an">
-        <div class="card-top"><div class="ico" aria-hidden="true"><img src="anaplirwseis/icon-192.png" alt="" width="56" height="56"></div></div>
-        <h2>Αναπληρώσεις</h2>
-        <p>Δηλώνεις ποιοι λείπουν σήμερα και προτείνει ποιος καλύπτει κάθε ώρα: πρώτα όσοι έχουν ΓΡ, μετά όσοι έχουν κενό, με δίκαιη κατανομή μέσα στον μήνα. Βγάζει Word για ανάρτηση.</p>
-        <div class="tags"><span class="tag step">Βήμα 4</span><span class="tag">Πρόγραμμα + ΓΡ → Word</span><span class="tag">Ιστορικό μήνα</span></div>
-        <div class="status" hidden></div>
-        <div class="sync" hidden></div>
-        <span class="open"><span class="open-l">Άνοιγμα</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-      </a>
     </div>
 
     <div class="install" id="install">
       <button type="button" id="installBtn">Εγκατάσταση της σουίτας ως εφαρμογή</button>
       <div class="hint" id="installHint"></div>
     </div>
+
+    <section class="backup" id="backup" aria-label="Αντίγραφο ασφαλείας">
+      <div><b>Αντίγραφο ασφαλείας</b><span>Όλες οι ρυθμίσεις, εξαιρέσεις, κανόνες, επιβαρύνσεις, προτιμήσεις και το ιστορικό, σε ένα αρχείο.</span></div>
+      <div class="bk-btns">
+        <button type="button" class="main" id="bkSave">Λήψη αντιγράφου</button>
+        <label>Επαναφορά…<input type="file" id="bkLoad" accept=".json,application/json"></label>
+      </div>
+      <div class="bk-msg" id="bkMsg" hidden></div>
+    </section>
 
     <p class="privacy">Τα αρχεία προγραμμάτων και τα ονόματα των εκπαιδευτικών δεν ανεβαίνουν πουθενά· η επεξεργασία γίνεται στη συσκευή σου.</p>
   </main>
@@ -339,10 +346,7 @@
     { href: 'efimeries/', st: efStale ? 'bad' : efHas ? (dlEf >= ((efs && efs.at) || 0) - 5000 && dlEf ? 'ok' : 'half') : 'none', t: 'Εφημερίες', bad: efStale,
       d: efStale ? STALE : efHas ? ((efs.payload.dateLabel ? 'Εβδομάδα ' + esc(efs.payload.dateLabel) + ' · ' : '') + (dlEf ? 'Word: ' + when(dlEf) : 'Το Word δεν έχει κατέβει')) : 'Δεν έχουν βγει ακόμα' },
     { href: 'gr/', st: grStale ? 'bad' : grHas ? (dlGr && dlGr >= (gr.at || 0) - 5000 ? 'ok' : 'half') : 'none', t: 'ΓΡ', bad: grStale,
-      d: grStale ? STALE.replace('τες', 'το') : grHas ? (dlGr ? 'Excel: ' + when(dlGr) : 'Το Excel δεν έχει κατέβει') : 'Δεν έχουν βγει ακόμα' },
-    { href: 'anaplirwseis/', st: anHas ? (anDone ? 'ok' : 'half') : anToday ? 'ok' : 'none', t: 'Αναπληρώσεις',
-      d: anHas ? gaps.length + (gaps.length === 1 ? ' κενό' : ' κενά') + ' από τη Συμπύκνωση (' + gapDays.map(function (d) { return DN[d]; }).join(', ') + ')' + (anDone ? ' · καλύφθηκαν' : ' · θέλουν αναπληρωτή')
-        : anToday ? 'Σήμερα: ' + anToday.rows.filter(function (r) { return r.cover; }).length + ' ώρες καλύφθηκαν' : 'Κανένα κενό · μόνο για έκτακτες απουσίες' }
+      d: grStale ? STALE.replace('τες', 'το') : grHas ? (dlGr ? 'Excel: ' + when(dlGr) : 'Το Excel δεν έχει κατέβει') : 'Δεν έχουν βγει ακόμα' }
   ];
   var MARK = { ok: '✓', half: '!', bad: '!', none: '' };
   document.getElementById('steps').innerHTML = steps.map(function (s, i) {
@@ -351,7 +355,7 @@
   var anyStale = efStale || grStale;
   document.getElementById('weekSub').innerHTML = !tt ? 'Ξεκίνα με «Νέα εβδομάδα»: ανέβασε το ωρολόγιο πρόγραμμα.'
     : anyStale ? '<b style="color:var(--red)">Κάτι άλλαξε στη Συμπύκνωση — άνοιξε όσα έχουν «!» για να ενημερωθούν.</b>'
-    : (steps[1].st === 'ok' && steps[2].st === 'ok' && (!anHas || anDone) ? 'Όλα έτοιμα για αυτή την εβδομάδα. ' : 'Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή. ') + 'Πρόγραμμα: <b>' + esc(tt.fname || '') + '</b>';
+    : (steps[1].st === 'ok' && steps[2].st === 'ok' ? 'Όλα έτοιμα για αυτή την εβδομάδα. ' : 'Τι έχει γίνει και τι μένει, σε αυτή τη συσκευή. ') + 'Πρόγραμμα: <b>' + esc(tt.fname || '') + '</b>';
 
   // ---- «Νέα εβδομάδα»: ένα ανέβασμα για όλες· καθαρίζουν απόντες/χειροκίνητες αλλαγές της προηγούμενης ----
   document.getElementById('newWeek').addEventListener('change', function (e) {
@@ -493,6 +497,44 @@
     });
   }
   window.addEventListener('suite-sync', where); where();
+})();
+</script>
+<script>
+/* Αντίγραφο ασφαλείας: όλα τα δεδομένα της σουίτας (ίδιος ιστότοπος → ίδιο localStorage) σε ένα αρχείο .json, και επαναφορά. */
+(function () {
+  var TYPE = 'suite-backup-v1';
+  // προσωρινά/εσωτερικά κλειδιά που δεν χρειάζεται να κρατηθούν
+  var SKIP = /^(firebase|suite-sync-pending|suite-sync-backup|suite-sync-cloud)/;
+  var msg = document.getElementById('bkMsg');
+  function say(t, ok) { msg.hidden = false; msg.textContent = t; msg.style.color = ok ? 'var(--green)' : 'var(--red)'; }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  document.getElementById('bkSave').addEventListener('click', function () {
+    var data = {}, n = 0;
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (!SKIP.test(k)) { data[k] = localStorage.getItem(k); n++; } } }
+    catch (e) { say('Δεν διαβάστηκαν τα δεδομένα του browser.'); return; }
+    var d = new Date(), name = 'Σουίτα_αντίγραφο_' + p2(d.getDate()) + '-' + p2(d.getMonth() + 1) + '-' + d.getFullYear() + '.json';
+    var blob = new Blob([JSON.stringify({ type: TYPE, at: d.toISOString(), count: n, data: data })], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
+    try { localStorage.setItem('suite-backup-at', String(Date.now())); } catch (e) {}
+    say('✓ Κατέβηκε το ' + name + ' (' + n + ' στοιχεία). Κράτα το σε USB ή στείλ\' το στο email σου.', true);
+  });
+  document.getElementById('bkLoad').addEventListener('change', function (e) {
+    var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var b; try { b = JSON.parse(rd.result); } catch (err) { say('Το αρχείο δεν είναι αντίγραφο της σουίτας.'); return; }
+      if (!b || b.type !== TYPE || !b.data || typeof b.data !== 'object') { say('Το αρχείο δεν είναι αντίγραφο της σουίτας.'); return; }
+      var when = new Date(b.at), lbl = isNaN(when) ? '' : ' της ' + p2(when.getDate()) + '/' + p2(when.getMonth() + 1) + '/' + when.getFullYear();
+      if (!confirm('Επαναφορά του αντιγράφου' + lbl + ';\n\nΟι ρυθμίσεις και η δουλειά σε αυτή τη συσκευή θα γίνουν όπως ήταν τότε.')) return;
+      var n = 0;
+      try { Object.keys(b.data).forEach(function (k) { if (SKIP.test(k) || typeof b.data[k] !== 'string') return; localStorage.setItem(k, b.data[k]); n++; }); }
+      catch (err) { say('Δεν χώρεσαν όλα στον browser (' + n + ' επανήλθαν).'); return; }
+      say('✓ Επανήλθαν ' + n + ' στοιχεία. Ανανέωση…', true);
+      setTimeout(function () { location.reload(); }, 900);
+    };
+    rd.readAsText(f);
+  });
 })();
 </script>
 </body>
