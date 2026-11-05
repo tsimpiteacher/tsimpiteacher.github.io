@@ -2,6 +2,7 @@
 <html lang="el">
 <head>
 <meta charset="utf-8">
+<script src="/suite-sync.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Εφαρμογές Γιάννη Τσιμπινού</title>
 <meta name="description" content="Σουίτα εργαλείων για το σχολείο: Συμπύκνωση, Εφημερίες, Κατανομή ΓΡ και Αναπληρώσεις. Δημιουργός: Γιάννης Τσιμπινός.">
@@ -77,6 +78,9 @@
   .steps a.step b{display:block; font-size:14px; color:var(--ink);}
   .steps a.step span.t{color:var(--muted);}
   .steps a.step span.t.bad{color:var(--red); font-weight:600;}
+  .steps a.step span.w{display:block; margin-top:3px; font-size:12px; color:var(--muted);}
+  .steps a.step span.w.new{color:var(--red); font-weight:600;}
+  .steps a.step span.w[hidden]{display:none;}
   .dlall:focus-visible{outline:3px solid var(--blue); outline-offset:2px;}
   .dlmsg{font-size:13px; color:var(--muted); margin-top:10px;}
   .dlmsg a{color:var(--blue); font-weight:600;}
@@ -268,14 +272,6 @@
       card.querySelector('.card-top').appendChild(t);
     }
   });
-  // συγχρονισμός κάθε εφαρμογής, όπως τον κατέγραψε η ίδια την τελευταία φορά που άνοιξε σε αυτή τη συσκευή
-  var SYNC_TXT = { on: '☁ Συγχρονισμός ενεργός', off: '⚠ Χωρίς συγχρονισμό', err: '⚠ Πρόβλημα συγχρονισμού' };
-  Array.prototype.forEach.call(document.querySelectorAll('a.card[data-app]'), function (card) {
-    var s = get('suite-sync-' + card.getAttribute('data-app')), el = card.querySelector('.sync');
-    if (!s || !SYNC_TXT[s.state] || !el) return;
-    el.textContent = SYNC_TXT[s.state] + (s.state === 'on' && s.at ? ' · ' + when(s.at) : '');
-    el.className = 'sync ' + s.state; el.hidden = false;
-  });
 })();
 
 /* Θέμα (κοινό με τις εφαρμογές) και ειδοποίηση νέας έκδοσης */
@@ -350,7 +346,7 @@
   ];
   var MARK = { ok: '✓', half: '!', bad: '!', none: '' };
   document.getElementById('steps').innerHTML = steps.map(function (s, i) {
-    return '<li><a class="step" href="' + s.href + '"><span class="dot ' + s.st + '" aria-hidden="true">' + (MARK[s.st] || (i + 1)) + '</span><div><b>' + (i + 1) + '. ' + s.t + '</b><span class="t' + (s.bad ? ' bad' : '') + '">' + s.d + '</span></div></a></li>';
+    return '<li><a class="step" href="' + s.href + '"><span class="dot ' + s.st + '" aria-hidden="true">' + (MARK[s.st] || (i + 1)) + '</span><div><b>' + (i + 1) + '. ' + s.t + '</b><span class="t' + (s.bad ? ' bad' : '') + '">' + s.d + '</span><span class="w" data-g="' + ['sy', 'ef', 'gr', 'an'][i] + '" hidden></span></div></a></li>';
   }).join('');
   var anyStale = efStale || grStale;
   document.getElementById('weekSub').innerHTML = !tt ? 'Ξεκίνα με «Νέα εβδομάδα»: ανέβασε το ωρολόγιο πρόγραμμα.'
@@ -468,6 +464,35 @@
       .then(function () { btn.disabled = false; btn.querySelector('span').textContent = 'Λήψη όλων'; });
     }
   });
+})();
+</script>
+<script>
+/* Πού και πότε έγινε η τελευταία δουλειά σε κάθε εφαρμογή (κοινός συγχρονισμός σουίτας, suite-sync.js) */
+(function () {
+  function when(t) {
+    var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; }, today = new Date(), y = new Date(); y.setDate(today.getDate() - 1);
+    var DN = ['Κυρ', 'Δευ', 'Τρί', 'Τετ', 'Πέμ', 'Παρ', 'Σάβ'];
+    return (d.toDateString() === today.toDateString() ? 'σήμερα' : d.toDateString() === y.toDateString() ? 'χθες' : DN[d.getDay()] + ' ' + p(d.getDate()) + '/' + p(d.getMonth() + 1)) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function where() {
+    var SS = window.SUITE_SYNC; if (!SS || !SS.state.user) return;
+    var st = SS.status(), me = {}; try { me = JSON.parse(localStorage.getItem('suite-device')) || {}; } catch (e) {}
+    function line(g) {
+      var x = st[g]; if (!x) return null;
+      if (x.newer) return { t: '⚠ Νεότερες αλλαγές από ' + (x.cloudDevice || 'άλλη συσκευή') + ' · ' + when(x.cloudAt), cls: 'new' };
+      if (x.dirty && x.localAt) return { t: '☁ Εδώ' + (me.name ? ' (' + me.name + ')' : '') + ' · ' + when(x.localAt) + ' · αποστέλλεται', cls: '' };
+      if (x.cloudAt) return { t: '☁ ' + (x.cloudDevice || 'Συσκευή') + ' · ' + when(x.cloudAt), cls: '' };
+      return null;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('#steps span.w[data-g]'), function (el) {
+      var l = line(el.getAttribute('data-g')); el.hidden = !l; if (l) { el.textContent = l.t; el.className = 'w ' + l.cls; }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('a.card[data-app]'), function (card) {
+      var l = line(card.getAttribute('data-app')), el = card.querySelector('.sync'); if (!el) return;
+      el.hidden = !l; if (l) { el.textContent = l.t; el.className = 'sync ' + (l.cls === 'new' ? 'err' : 'on'); }
+    });
+  }
+  window.addEventListener('suite-sync', where); where();
 })();
 </script>
 </body>

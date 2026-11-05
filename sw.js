@@ -1,6 +1,6 @@
 /* Service worker αρχικής σελίδας: offline για το ίδιο το κέλυφος. Δεν αγγίζει τις εφαρμογές /efimeries/ και /gr/. */
-const CACHE = 'suite-hub-v13';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png', './logo.webp'];
+const CACHE = 'suite-hub-v14';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png', './logo.webp', './suite-sync.js'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => c.add(new Request(u, { cache: 'reload' }))))).then(() => self.skipWaiting()));
