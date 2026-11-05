@@ -605,6 +605,17 @@ function compactDay(model, d, ctx) {
     if (ctx.parentAt && ctx.parentAt[ti] != null) row[ctx.parentAt[ti]] = 2;
     base[ti] = row;
   });
+  // Συνδιδασκαλία με ΕΑΕ: ο καθηγητής ΕΑΕ (ειδικότητα με «ΕΑΕ») ακολουθεί τον καθηγητή χωρίς ΕΑΕ που έχει το ίδιο
+  // τμήμα την ίδια ώρα. Μετακινούνται πάντα μαζί (ίδιο block)· αν ο κύριος λείπει, χάνεται και η ώρα του ΕΑΕ
+  // (ο ΕΑΕ μένει ελεύθερος τότε και η ώρα του τμήματος αδειάζει). Ώρα ΕΑΕ χωρίς συνδιδάσκοντα μένει κανονικό μάθημα.
+  const isEAE = ti => /ΕΑΕ/.test(capsGr(model.teachers[ti].spec || ''));
+  const sameSlot = (a, b) => a.p0 === b.p0 && a.cls.some(c => b.cls.includes(c));
+  for (let i = lessons.length - 1; i >= 0; i--) {
+    const e = lessons[i]; if (!isEAE(e.ti)) continue;
+    if (lessons.some(x => !isEAE(x.ti) && sameSlot(x, e))) continue;            // ο κύριος είναι εδώ
+    const main = removed.find(x => !isEAE(x.ti) && sameSlot(x, e));             // ο κύριος λείπει
+    if (main) { lessons.splice(i, 1); e.follow = main.ti; removed.push(e); }
+  }
   const start = {}, origLast = {};
   lessons.concat(removed).forEach(e => e.cls.forEach(c => {
     start[c] = Math.min(start[c] || 99, e.p0); origLast[c] = Math.max(origLast[c] || 0, e.p0);
@@ -816,7 +827,7 @@ async function loadSource(manual){
 }
 
 /* ---------- πέρασμα στις Εφημερίες: το πρόγραμμα της εβδομάδας με τις συμπυκνωμένες μέρες ---------- */
-const SIGV = 8;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
+const SIGV = 9;   // μορφή του αρχείου για τις Εφημερίες/ΓΡ· όταν αλλάζει, το παλιό ξαναφτιάχνεται μόνο του
 function sigNow(){
   const abs = A.absent.filter(a => a.days.length).map(a => [A.model.teachers[a.ti].name, a.days.slice().sort(), a.days.map(d => hoursOf(a, d))]).sort();
   return JSON.stringify([SIGV, A.baseAt, abs, A.edits, A.opts, A.parLocks]);
@@ -827,7 +838,7 @@ function syInfo(days){
     moved: days.reduce((n, d) => n + (A.res[d] ? A.res[d].moved.length : 0), 0), holes: days.reduce((n, d) => n + (A.res[d] ? A.res[d].holes.length : 0), 0),
     // κενά που μένουν, για τις Αναπληρώσεις: μέρα, ώρα, τμήμα και ποιοι απόντες είχαν μάθημα σε αυτό το τμήμα εκείνη τη μέρα
     gaps: days.flatMap(d => { const r = A.res[d]; return r ? r.holes.map(x => ({ day: d, period: x.p, cls: x.c,
-      by: [...new Set(r.removed.filter(e => e.cls.includes(x.c)).map(e => A.model.teachers[e.ti].name))] })) : []; }) };
+      by: [...new Set(r.removed.filter(e => e.follow == null && e.cls.includes(x.c)).map(e => A.model.teachers[e.ti].name))] })) : []; }) };
 }
 // Ίδιο αρχείο με το αρχικό· αλλάζουν μόνο τα κελιά των συμπυκνωμένων ημερών. Οι απόντες εκείνη τη μέρα μένουν κενοί και γκρι,
 // ώστε οι Εφημερίες να μην τους βάλουν σε βάρδια και το ΓΡ να τους θεωρεί εκτός.
@@ -874,7 +885,7 @@ async function buildWeekXlsx(baseFile, days){
         }
         cell.value = c === 'G' ? GR : c === 'P' ? PAR : (c === 'L' && !classesOf(t.labels[s.si]).length) ? t.labels[s.si] : null;
         // κενό που δημιουργήθηκε: το μάθημα αυτής της ώρας ανέβηκε νωρίτερα → κίτρινο γέμισμα (μένει και στο Excel του ΓΡ)
-        const up = c === 'L' && r.entries.find(x => x.ti === ti && x.p0 === s.period && x.p !== x.p0);
+        const up = c === 'L' && (r.entries.find(x => x.ti === ti && x.p0 === s.period && x.p !== x.p0) || r.removed.find(x => x.follow != null && x.ti === ti && x.p0 === s.period));
         if (up) paint(cell, 'FFFF00');
       });
     });
@@ -1119,7 +1130,8 @@ function renderTeacherGrid(r){
   const byT = {}; r.entries.forEach(e => { (byT[e.ti] = byT[e.ti] || {})[e.p] = e; });
   const vacated = {}; r.entries.forEach(e => { if (e.p !== e.p0) (vacated[e.ti] = vacated[e.ti] || new Set()).add(e.p0); });
   const rm = {}; r.removed.forEach(e => { (rm[e.ti] = rm[e.ti] || {})[e.p0] = e; });
-  const rows = m.teachers.map((t, ti) => ({ t, ti })).filter(o => !o.t.staff && (byT[o.ti] || absent.has(o.ti)));
+  const fol = {}; r.removed.filter(e => e.follow != null).forEach(e => { (fol[e.ti] = fol[e.ti] || {})[e.p0] = e; });
+  const rows = m.teachers.map((t, ti) => ({ t, ti })).filter(o => !o.t.staff && (byT[o.ti] || absent.has(o.ti) || fol[o.ti]));
   rows.sort((a, b) => (absent.has(b.ti) - absent.has(a.ti)) || ((vacated[b.ti] ? 1 : 0) - (vacated[a.ti] ? 1 : 0)) || a.t.name.localeCompare(b.t.name, 'el'));
   let h = '<thead><tr><th class="nm">Εκπαιδευτικός</th>' + Array.from({ length: P }, (_, i) => `<th>${ord(i + 1)}</th>`).join('') + '</tr></thead><tbody>';
   const sel = selEntry(r), sb = sel ? r.blockOf(sel) : [], selT = new Set(sb.map(x => x.ti));
@@ -1134,7 +1146,8 @@ function renderTeacherGrid(r){
         const mv = e.p !== e.p0, pin = isFixed(d, e);
         const gr = mv && r.base[ti][p] === 1;
         h += `<td class="c pick ${mv ? 'M' : 'L'}${pin ? ' pin' : ''}${mk}" data-id="${e.id}" ${at} title="${esc(e.label)}${mv ? ` · από ${ord(e.p0)}` : ''}${gr ? ' · στη θέση ΓΡ' : ''}">${esc(e.label)}${mv ? `<small>${arrow(e)} από ${ord(e.p0)}</small>` : ''}</td>`;
-      } else if (vacated[ti] && vacated[ti].has(p)) h += `<td class="c V${mk}" ${at} title="Άδειασε">·</td>`;
+      } else if (fol[ti] && fol[ti][p]) h += `<td class="c V${mk}" ${at} title="ΕΑΕ: λείπει ο/η ${esc(m.teachers[fol[ti][p].follow].name)}, η ώρα χάνεται"><s>${esc(fol[ti][p].label)}</s></td>`;
+      else if (vacated[ti] && vacated[ti].has(p)) h += `<td class="c V${mk}" ${at} title="Άδειασε">·</td>`;
       else if (r.base[ti][p] === 1) h += `<td class="c Gr${mk}" ${at}>ΓΡ</td>`;
       else if (r.base[ti][p] === 2) h += '<td class="c Bz">—</td>';
       else h += `<td class="c${mk}" ${at}></td>`;
@@ -1174,7 +1187,9 @@ function renderChanges(r){
   if (c.holes.length) h += '<h3>Κενά που μένουν</h3><ul><li>' + c.holes.map(x => `<b>${esc(x.c)}</b> ${ord(x.p)}`).join(' · ') +
     '<br><span style="color:var(--muted);font-size:13px">Κανένα μάθημα δεν μπορούσε να ανέβει εκεί. Χρειάζονται αναπλήρωση — <a href="../anaplirwseis/">Αναπληρώσεις</a>.</span></li></ul>';
   const lt = Object.keys(c.lost).map(Number);
-  if (lt.length) h += '<h3>Ώρες απόντων</h3><ul>' + lt.map(ti => `<li><b>${esc(m.teachers[ti].name)}</b><br><span style="color:var(--muted)">${c.lost[ti].sort((a, b) => a.p0 - b.p0).map(e => `${ord(e.p0)} ${esc(e.label)}`).join(' · ')}</span></li>`).join('') + '</ul>';
+  const ltA = lt.filter(ti => c.lost[ti].some(e => e.follow == null)), ltF = lt.filter(ti => c.lost[ti].some(e => e.follow != null));
+  if (ltA.length) h += '<h3>Ώρες απόντων</h3><ul>' + ltA.map(ti => `<li><b>${esc(m.teachers[ti].name)}</b><br><span style="color:var(--muted)">${c.lost[ti].filter(e => e.follow == null).sort((a, b) => a.p0 - b.p0).map(e => `${ord(e.p0)} ${esc(e.label)}`).join(' · ')}</span></li>`).join('') + '</ul>';
+  if (ltF.length) h += '<h3>ΕΑΕ χωρίς τον συνδιδάσκοντα</h3><ul>' + ltF.map(ti => `<li><b>${esc(m.teachers[ti].name)}</b> <span style="color:var(--muted)">— ελεύθερος/η: ${c.lost[ti].filter(e => e.follow != null).sort((a, b) => a.p0 - b.p0).map(e => `${ord(e.p0)} ${esc(e.label)} (λείπει ${esc(surname(m.teachers[e.follow].name))})`).join(' · ')}</span></li>`).join('') + '</ul>';
   $('changes').innerHTML = h;
 }
 const arrow = e => e.p < e.p0 ? '↑' : '↓';
