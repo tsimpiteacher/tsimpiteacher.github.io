@@ -235,6 +235,7 @@
     '.ssync-pan .x{position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:20px;padding:4px 8px}',
     '@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ssync-pan{background:#1B2338;color:#E8EDF5;border-color:#33405F}:root:not([data-theme="light"]) .ssync-pan td,:root:not([data-theme="light"]) .ssync-pan th{border-color:#33405F}:root:not([data-theme="light"]) .ssync-pan button,:root:not([data-theme="light"]) .ssync-pan input{background:#232C45;color:#E8EDF5;border-color:#3B4A6E}}',
     ':root[data-theme="dark"] .ssync-pan{background:#1B2338;color:#E8EDF5;border-color:#33405F}:root[data-theme="dark"] .ssync-pan td,:root[data-theme="dark"] .ssync-pan th{border-color:#33405F}:root[data-theme="dark"] .ssync-pan button,:root[data-theme="dark"] .ssync-pan input{background:#232C45;color:#E8EDF5;border-color:#3B4A6E}',
+    '.ssync-ban[hidden],.ssync-pan[hidden],.ssync-btn[hidden]{display:none!important}',
     '@media print{.ssync-btn,.ssync-ban,.ssync-pan{display:none!important}}'
   ].join('\n');
   document.head.appendChild(css);
