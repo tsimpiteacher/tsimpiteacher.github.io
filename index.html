@@ -553,5 +553,27 @@
   });
 })();
 </script>
+<script>
+/* Όταν γυρίζεις στην αρχική (π.χ. με «Πίσω» ή από άλλο παράθυρο) αφού κατέβασες Word/Excel ή άλλαξε το πρόγραμμα,
+   τα βήματα ξαναδιαβάζονται — αλλιώς η σελίδα έδειχνε την παλιά κατάσταση και το «!» έμενε. */
+(function () {
+  var KEYS = ['suite-dl-ef', 'gr-saved-at', 'suite-tt-used-ef', 'suite-tt-used-gr', 'suite-timetable-v1', 'efimeries-session-local-v1', 'gr-plan-v1'];
+  function sig() {
+    return KEYS.map(function (k) {
+      try { var v = localStorage.getItem(k); if (!v) return ''; if (v.charAt(0) !== '{') return v; var o = JSON.parse(v); return String((o && o.at) || v.length); } catch (e) { return ''; }
+    }).join('|');
+  }
+  var s0 = sig(), btn = document.getElementById('dlAll'), msg = document.getElementById('dlMsg');
+  function chk() {
+    if (document.hidden) return;
+    if (btn && btn.disabled && btn.textContent.indexOf('Ετοιμασία') >= 0) return;   // τρέχει η «Λήψη όλων»
+    if (sig() !== s0) location.reload();
+  }
+  if (msg && window.MutationObserver) new MutationObserver(function () { s0 = sig(); }).observe(msg, { childList: true, attributes: true, characterData: true, subtree: true });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) chk(); });
+  document.addEventListener('visibilitychange', chk);
+  window.addEventListener('focus', chk);
+})();
+</script>
 </body>
 </html>
