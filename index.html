@@ -454,7 +454,12 @@
   }
   btn.addEventListener('click', function () {
     var handle = null;
-    pickZip().then(function (h) { handle = h; run(); }, function () { msg.textContent = 'Η αποθήκευση ακυρώθηκε.'; msg.hidden = false; });
+    window.__suiteDl = true;   // όσο τρέχει η λήψη, η αρχική δεν ξαναφορτώνεται (αλλιώς χανόταν το αρχείο)
+    // ξαναδιάβασε τι υπάρχει τώρα (μπορεί να άλλαξε σε άλλο παράθυρο αφού άνοιξε η αρχική)
+    var efNow = get('efimeries-session-local-v1'), grNow = get('gr-plan-v1');
+    efHas = !!(efNow && efNow.payload && efNow.payload.assignments && Object.keys(efNow.payload.assignments).length);
+    grHas = !!(grNow && grNow.file);
+    pickZip().then(function (h) { handle = h; run(); }, function () { window.__suiteDl = false; msg.textContent = 'Η αποθήκευση ακυρώθηκε.'; msg.hidden = false; });
     function run() {
     btn.disabled = true; btn.querySelector('span').textContent = 'Ετοιμασία…'; msg.hidden = true;
     var LBL = ['Εφημερίες', 'ΓΡ', 'Αναπληρώσεις'];
@@ -481,7 +486,7 @@
         });
       });
     }).catch(function (e) { dropEmpty(handle); msg.textContent = '⚠ Δεν φτιάχτηκε το .zip: ' + (e.message || e); msg.hidden = false; })
-      .then(function () { btn.disabled = false; btn.querySelector('span').textContent = 'Λήψη όλων'; });
+      .then(function () { btn.disabled = false; btn.querySelector('span').textContent = 'Λήψη όλων'; window.__suiteDl = false; });
     }
   });
 })();
@@ -564,15 +569,19 @@
     }).join('|');
   }
   var s0 = sig(), btn = document.getElementById('dlAll'), msg = document.getElementById('dlMsg');
+  var down = false, t = 0;
   function chk() {
-    if (document.hidden) return;
-    if (btn && btn.disabled && btn.textContent.indexOf('Ετοιμασία') >= 0) return;   // τρέχει η «Λήψη όλων»
+    if (document.hidden || down || window.__suiteDl) return;   // πατιέται κουμπί ή τρέχει η «Λήψη όλων» (και το «Αποθήκευση ως»)
+    if (btn && btn.disabled && btn.textContent.indexOf('Ετοιμασία') >= 0) return;
     if (sig() !== s0) location.reload();
   }
+  function later() { clearTimeout(t); t = setTimeout(chk, 900); }   // μικρή αναμονή: το κλικ που φέρνει το παράθυρο μπροστά προλαβαίνει να ξεκινήσει
+  document.addEventListener('pointerdown', function () { down = true; }, true);
+  document.addEventListener('pointerup', function () { down = false; later(); }, true);
   if (msg && window.MutationObserver) new MutationObserver(function () { s0 = sig(); }).observe(msg, { childList: true, attributes: true, characterData: true, subtree: true });
-  window.addEventListener('pageshow', function (e) { if (e.persisted) chk(); });
-  document.addEventListener('visibilitychange', chk);
-  window.addEventListener('focus', chk);
+  window.addEventListener('pageshow', function (e) { if (e.persisted) later(); });
+  document.addEventListener('visibilitychange', later);
+  window.addEventListener('focus', later);
 })();
 </script>
 </body>
