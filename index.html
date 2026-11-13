@@ -433,7 +433,8 @@
   function zipName() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return 'Εβδομάδα_' + p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear() + '.zip'; }
   // «Αποθήκευση ως»: ρωτά πρώτα πού θα σωθεί το .zip (Chrome/Edge)· όπου δεν υποστηρίζεται, κατεβαίνει στις Λήψεις.
   function pickZip() {
-    if (typeof window.showSaveFilePicker !== 'function') return Promise.resolve(null);
+    // Το «Αποθήκευση ως» του Chrome ακυρωνόταν μόνο του (σχολείο και σπίτι) → πάντα κανονική λήψη στις Λήψεις.
+    return Promise.resolve(null);
     var t0 = Date.now();   // «ακύρωση» μέσα σε κλάσματα δευτερολέπτου = το παράθυρο δεν άνοιξε καν (κάποια Chrome) → απλή λήψη στις Λήψεις
     return window.showSaveFilePicker({ suggestedName: zipName(), id: 'suite-save', types: [{ description: 'Αρχείο ZIP', accept: { 'application/zip': ['.zip'] } }] })
       .catch(function (e) { if (e && e.name === 'AbortError' && Date.now() - t0 > 700) throw e; return null; });
